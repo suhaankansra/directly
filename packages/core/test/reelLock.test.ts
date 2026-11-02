@@ -23,7 +23,7 @@ let lock: ReelLock;
 
 beforeEach(() => {
   lock?.dispose();
-  document.documentElement.removeAttribute('data-oo-reel-locked');
+  document.documentElement.removeAttribute('data-di-reel-locked');
   document.body.innerHTML = SLIDES;
   lock = installReelLock({
     win: window,
@@ -39,17 +39,17 @@ afterEach(() => {
 describe('arm / disarm', () => {
   it('marks the document as locked with the pinned id', () => {
     lock.arm('Cabc');
-    expect(document.documentElement.getAttribute('data-oo-reel-locked')).toBe('Cabc');
+    expect(document.documentElement.getAttribute('data-di-reel-locked')).toBe('Cabc');
     expect(lock.pinned()).toBe('Cabc');
   });
 
   it('keeps exactly one slide visible', () => {
     lock.arm('Cabc');
     const [first, second, third] = slides();
-    expect(first!.getAttribute('data-oo-slide-active')).toBe('true');
-    expect(first!.hasAttribute('data-oo-slide-hidden')).toBe(false);
-    expect(second!.getAttribute('data-oo-slide-hidden')).toBe('true');
-    expect(third!.getAttribute('data-oo-slide-hidden')).toBe('true');
+    expect(first!.getAttribute('data-di-slide-active')).toBe('true');
+    expect(first!.hasAttribute('data-di-slide-hidden')).toBe(false);
+    expect(second!.getAttribute('data-di-slide-hidden')).toBe('true');
+    expect(third!.getAttribute('data-di-slide-hidden')).toBe('true');
   });
 
   it('loops the active video so the ended event never advances to the next reel', () => {
@@ -64,16 +64,16 @@ describe('arm / disarm', () => {
     extra.innerHTML = '<video></video>';
     document.getElementById('scroller')!.appendChild(extra);
     lock.tick();
-    expect(extra.getAttribute('data-oo-slide-hidden')).toBe('true');
+    expect(extra.getAttribute('data-di-slide-hidden')).toBe('true');
   });
 
   it('restores every slide on disarm', () => {
     lock.arm('Cabc');
     lock.disarm();
-    expect(document.documentElement.hasAttribute('data-oo-reel-locked')).toBe(false);
+    expect(document.documentElement.hasAttribute('data-di-reel-locked')).toBe(false);
     for (const slide of slides()) {
-      expect(slide.hasAttribute('data-oo-slide-hidden')).toBe(false);
-      expect(slide.hasAttribute('data-oo-slide-active')).toBe(false);
+      expect(slide.hasAttribute('data-di-slide-hidden')).toBe(false);
+      expect(slide.hasAttribute('data-di-slide-active')).toBe(false);
     }
     expect(lock.pinned()).toBeNull();
   });

@@ -47,7 +47,7 @@ await esbuild.build({
   platform: 'browser',
   legalComments: 'none',
   plugins: [rawPlugin],
-  banner: { js: '/* Only Inbox — in-page core. Built locally; no remote code. */' },
+  banner: { js: '/* Directly — in-page core. Built locally; no remote code. */' },
 });
 
 const inpage = await readFile(path.join(dist, 'inpage.js'), 'utf8');

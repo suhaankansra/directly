@@ -1,4 +1,4 @@
-# 02 — Architecture: how Only Inbox works, and why this shape
+# 02 — Architecture: how Directly works, and why this shape
 
 **Phase:** 2 of 11 · **Status:** complete (design decisions made, one risk explicitly unresolved) · **Date:** 2026-11-01
 **Depends on:** [01-teardown.md](01-teardown.md) · **Verified facts:** marked ✅ with source; everything else is marked ⚠️ and belongs to Phase 3.
@@ -170,7 +170,7 @@ I recommend A on honesty grounds: a half-frozen grid looks like a bug, and a bug
 
 ### 4.4 Redirect target
 
-Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the product's home, an interstitial is a speed bump on every mistap, and "not here 🙂" screens read as a broken app to a normal user. We do show a **short toast** ("Only Inbox — that's not here") once per navigation, so the user learns why the jump happened. Same behaviour on both platforms.
+Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the product's home, an interstitial is a speed bump on every mistap, and "not here 🙂" screens read as a broken app to a normal user. We do show a **short toast** ("Directly — that's not here") once per navigation, so the user learns why the jump happened. Same behaviour on both platforms.
 
 ---
 
@@ -188,7 +188,7 @@ Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the 
         │  patch history.pushState / replaceState                  │
         │  listen popstate                                         │
         │  listen click (capture) for <a href> to blocked paths     │
-        │  every URL change → postMessage({type:'oo:url', ...})     │
+        │  every URL change → postMessage({type:'di:url', ...})     │
         └───────────────────────────┬─────────────────────────────┘
                                     │
                      blocked?  yes ─┴─> history.replaceState('/direct/inbox/')
@@ -197,8 +197,8 @@ Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the 
 
 - **Why both:** Instagram is a single-page app. Most navigation never triggers a document load, so the host hook alone is useless; and a page-level patch alone can be bypassed by a full load from an external link. Neither layer is sufficient.
 - **Message protocol** (`lib/bridge.ts` ↔ `core`):
-  - page → host: `{v:1, type:'oo:url', path, layout:'mobile'|'desktop', pinId?:string}`; `{type:'oo:blocked', path, reason, selector?}`; `{type:'oo:reel_open'| 'oo:reel_closed', id}`.
-  - host → page: `{type:'oo:settings', settings}`, `{type:'oo:navigate', path}`, `{type:'oo:pin', id|null}`, `{type:'oo:logout'}`.
+  - page → host: `{v:1, type:'di:url', path, layout:'mobile'|'desktop', pinId?:string}`; `{type:'di:blocked', path, reason, selector?}`; `{type:'di:reel_open'| 'di:reel_closed', id}`.
+  - host → page: `{type:'di:settings', settings}`, `{type:'di:navigate', path}`, `{type:'di:pin', id|null}`, `{type:'di:logout'}`.
   - Every message is validated: `v === 1`, a known `type`, `path` must start with `/`, length caps. On iOS the handler checks `message.securityOrigin`-equivalent (WKWebView `window.origin` is not exposed; we gate on the WebView's current `URL` host being `instagram.com`); in the extension, `event.source === window` and `event.origin === location.origin`. Unknown messages are dropped, never `eval`'d, never forwarded.
 - **Native tab sync:** the tab bar highlights from the **reported URL**, not the last tap, so a back-swipe or a deep link updates the UI (Phase 5A §3).
 
@@ -216,7 +216,7 @@ Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the 
 | `styles/skeleton.css` | dark loading skeleton (iOS: also a native loading view behind the WebView) | prevents the white flash |
 | `styles/navbar.css` | our 4-item bar (web only) | native tab bar on iOS |
 
-All rules are written with `:where()`/low specificity so IG's own styles win in a fight we don't need to win, and every hide rule is paired with a `[data-oo-off]` escape hatch for debugging.
+All rules are written with `:where()`/low specificity so IG's own styles win in a fight we don't need to win, and every hide rule is paired with a `[data-di-off]` escape hatch for debugging.
 
 ### 6.2 JS modules, in boot order
 
@@ -224,12 +224,12 @@ All rules are written with `:where()`/low specificity so IG's own styles win in 
 2. `routeGuard.ts` — install patches **before** IG's own scripts run (`document_start`) so we wrap `pushState` before IG captures a reference to it.
 3. `reelLock.ts` — arms on reel entry, disarms on exit; owns the pin.
 4. `cleanup.ts` — removes banners/upsells; MutationObserver with `requestIdleCallback` batching and a 150 ms trailing debounce.
-5. `navBar.ts` — web only; injected HTML bar, mirrors the native bar, posts `oo:navigate`.
+5. `navBar.ts` — web only; injected HTML bar, mirrors the native bar, posts `di:navigate`.
 6. `observer.ts` — one shared `MutationObserver` for all of the above, sub-tree, throttled, re-armed on route change; never observes `attributes` globally (too hot).
 
 ### 6.3 Lifecycle
 
-`document_start` → read settings → inject CSS → install route guard → initial route check → mount observer → arm per-surface modules. On every `oo:url` change: re-check route, re-run cleanup, re-arm or disarm reel lock, re-sync nav highlight. **Re-run, never assume** — IG re-renders aggressively.
+`document_start` → read settings → inject CSS → install route guard → initial route check → mount observer → arm per-surface modules. On every `di:url` change: re-check route, re-run cleanup, re-arm or disarm reel lock, re-sync nav highlight. **Re-run, never assume** — IG re-renders aggressively.
 
 ---
 
@@ -246,7 +246,7 @@ Goal: exactly one reel may play, the URL may not move to another reel, and the g
 | Gesture | capture-phase `touchstart`/`touchmove` on the reel container, `{passive:false}`: if `abs(dy) > 12 && abs(dy) > abs(dx) * 1.5` → `preventDefault() + stopPropagation()`. Horizontal swipes pass through so carousels still work |
 | Scroll | `overscroll-behavior: contain` on the scroller; `scroll-snap-type: none` on the reel container; if IG uses a scroll container, clamp `scrollTop` on `scroll` events (cheap, and the last line of defence if a future IG version ignores touch handlers) |
 | Autoplay-next | listen for `ended` on the video; if IG advances, the URL check catches it and reverts |
-| Instrumentation | `data-oo-reel-locked="<id>"` on `<html>` so tests and Phase 9 checks can assert the state rather than eyeball it |
+| Instrumentation | `data-di-reel-locked="<id>"` on `<html>` so tests and Phase 9 checks can assert the state rather than eyeball it |
 
 **Desktop (extension)**
 
@@ -324,7 +324,7 @@ Rules that keep this policy-safe (E7): the JSON may only contain **keys we shipp
 
 | Platform | Store | Reaches core via |
 |---|---|---|
-| iOS | AsyncStorage/MMKV (Phase 8) | `TabBar`/Lock screen → `IgWebView` → injected `window.__OO_SETTINGS__` + `oo:settings` message on change; core reads it at boot and on every change |
+| iOS | AsyncStorage/MMKV (Phase 8) | `TabBar`/Lock screen → `IgWebView` → injected `window.__OO_SETTINGS__` + `di:settings` message on change; core reads it at boot and on every change |
 | Extension | `chrome.storage.local` | content script reads at `document_start`, subscribes to `storage.onChanged`, re-applies live |
 | Website | none (static) | n/a |
 

@@ -9,7 +9,7 @@ import {
   type Layout,
   type Settings,
   type TabId,
-} from '@only-inbox/core';
+} from '@directly/core';
 
 import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
 import { TabBar } from './src/components/TabBar';
@@ -18,7 +18,7 @@ import { loadSettings, saveSettings } from './src/lib/settings';
 import { colors, radius, spacing } from './src/theme';
 
 const VERSION = '0.1.0';
-const BLOCK_TOAST = 'Only Inbox — that isn’t here';
+const BLOCK_TOAST = 'Directly — that isn’t here';
 
 function Shell() {
   const insets = useSafeAreaInsets();

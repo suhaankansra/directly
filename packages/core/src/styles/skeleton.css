@@ -1,7 +1,7 @@
 /* A dark overlay shown from document_start until the page has painted its
  * first real frame, so the WebView never flashes white (Phase 7). */
 
-#only-inbox-boot {
+#directly-boot {
   position: fixed;
   inset: 0;
   z-index: 2147482999;
@@ -13,28 +13,28 @@
   pointer-events: none;
 }
 
-#only-inbox-boot[data-ready='true'] {
+#directly-boot[data-ready='true'] {
   opacity: 0;
 }
 
-#only-inbox-boot[data-gone='true'] {
+#directly-boot[data-gone='true'] {
   display: none;
 }
 
-#only-inbox-boot .oo-mark {
+#directly-boot .di-mark {
   width: 44px;
   height: 44px;
   border-radius: 12px;
   background: rgba(108, 92, 231, 0.16);
   border: 1px solid rgba(108, 92, 231, 0.4);
-  animation: oo-pulse 1.4s ease-in-out infinite;
+  animation: di-pulse 1.4s ease-in-out infinite;
 }
 
-@keyframes oo-pulse {
+@keyframes di-pulse {
   0%, 100% { opacity: 0.45; transform: scale(0.96); }
   50% { opacity: 1; transform: scale(1); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #only-inbox-boot .oo-mark { animation: none; opacity: 0.8; }
+  #directly-boot .di-mark { animation: none; opacity: 0.8; }
 }

@@ -42,7 +42,7 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 | B5 | Profile Reels tab / grid video → single view only | PASS (auto: any non-pinned reel id blocked) |
 | B6 | Links inside DMs to reels/explore blocked | PASS (auto + browser: anchor intercepted before navigation) |
 | B7 | Browser back/forward cannot sneak into a blocked route | PASS (auto: `popstate` handler) |
-| B8 | "Use the app" banner never visible | PASS (browser: `data-oo-removed="app-banner"`) |
+| B8 | "Use the app" banner never visible | PASS (browser: `data-di-removed="app-banner"`) |
 | B9 | Deep link to a single reel with no DM origin is blocked | PASS (auto: host decision; browser: cold load redirects) |
 | B10 | Unknown route while logged in is blocked | PASS (auto) |
 

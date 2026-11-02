@@ -3,7 +3,7 @@
  * Nothing here reads or sends anything from Instagram.
  */
 
-import { mergeSettings, type Settings } from '@only-inbox/core';
+import { mergeSettings, type Settings } from '@directly/core';
 import { readStoredState, writeSettings } from '../platform.js';
 
 const KEYS: ReadonlyArray<keyof Settings> = [

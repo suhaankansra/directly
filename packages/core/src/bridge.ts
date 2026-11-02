@@ -16,16 +16,16 @@ export const MAX_MESSAGE_BYTES = 4096;
 const MAX_PATH_LENGTH = 512;
 
 export type PageMessage =
-  | { v: 1; type: 'oo:url'; path: string; layout: Layout; pinId: string | null }
-  | { v: 1; type: 'oo:blocked'; path: string; reason: string }
-  | { v: 1; type: 'oo:live'; layout: Layout }
-  | { v: 1; type: 'oo:tab'; tab: TabId | null }
-  | { v: 1; type: 'oo:account'; username: string | null };
+  | { v: 1; type: 'di:url'; path: string; layout: Layout; pinId: string | null }
+  | { v: 1; type: 'di:blocked'; path: string; reason: string }
+  | { v: 1; type: 'di:live'; layout: Layout }
+  | { v: 1; type: 'di:tab'; tab: TabId | null }
+  | { v: 1; type: 'di:account'; username: string | null };
 
 export type HostMessage =
-  | { v: 1; type: 'oo:settings'; settings: Settings }
-  | { v: 1; type: 'oo:navigate'; path: string }
-  | { v: 1; type: 'oo:pin'; id: string | null };
+  | { v: 1; type: 'di:settings'; settings: Settings }
+  | { v: 1; type: 'di:navigate'; path: string }
+  | { v: 1; type: 'di:pin'; id: string | null };
 
 const TAB_IDS = new Set<TabId>(['inbox', 'activity', 'profile', 'lock']);
 const LAYOUTS = new Set<Layout>(['mobile', 'desktop']);
@@ -60,7 +60,7 @@ export function parsePageMessage(input: unknown): PageMessage | null {
   const path = safePath(value['path']);
 
   switch (type) {
-    case 'oo:url': {
+    case 'di:url': {
       if (!path) return null;
       const layout = value['layout'];
       if (typeof layout !== 'string' || !LAYOUTS.has(layout as Layout)) return null;
@@ -69,32 +69,32 @@ export function parsePageMessage(input: unknown): PageMessage | null {
         typeof pinId === 'string' && pinId.length <= 128 && /^[A-Za-z0-9_-]+$/.test(pinId)
           ? pinId
           : null;
-      return { v: 1, type: 'oo:url', path, layout: layout as Layout, pinId: safePin };
+      return { v: 1, type: 'di:url', path, layout: layout as Layout, pinId: safePin };
     }
-    case 'oo:blocked': {
+    case 'di:blocked': {
       if (!path) return null;
       const reason = value['reason'];
       if (typeof reason !== 'string' || reason.length > 64) return null;
-      return { v: 1, type: 'oo:blocked', path, reason };
+      return { v: 1, type: 'di:blocked', path, reason };
     }
-    case 'oo:live': {
+    case 'di:live': {
       const layout = value['layout'];
       if (typeof layout !== 'string' || !LAYOUTS.has(layout as Layout)) return null;
-      return { v: 1, type: 'oo:live', layout: layout as Layout };
+      return { v: 1, type: 'di:live', layout: layout as Layout };
     }
-    case 'oo:tab': {
+    case 'di:tab': {
       const tab = value['tab'];
-      if (tab === null) return { v: 1, type: 'oo:tab', tab: null };
+      if (tab === null) return { v: 1, type: 'di:tab', tab: null };
       if (typeof tab !== 'string' || !TAB_IDS.has(tab as TabId)) return null;
-      return { v: 1, type: 'oo:tab', tab: tab as TabId };
+      return { v: 1, type: 'di:tab', tab: tab as TabId };
     }
-    case 'oo:account': {
+    case 'di:account': {
       // Only the *name* of the signed-in account, read from a profile link in the
       // page. It is displayed in the Lock tab and never stored or transmitted.
       const username = value['username'];
-      if (username === null) return { v: 1, type: 'oo:account', username: null };
+      if (username === null) return { v: 1, type: 'di:account', username: null };
       if (typeof username !== 'string' || !/^[A-Za-z0-9._]{1,30}$/.test(username)) return null;
-      return { v: 1, type: 'oo:account', username };
+      return { v: 1, type: 'di:account', username };
     }
     default:
       return null;
@@ -116,18 +116,18 @@ export function parseHostMessage(input: unknown): HostMessage | null {
   if (value['v'] !== PROTOCOL_VERSION) return null;
 
   switch (value['type']) {
-    case 'oo:settings':
-      return { v: 1, type: 'oo:settings', settings: mergeSettings(value['settings']) };
-    case 'oo:navigate': {
+    case 'di:settings':
+      return { v: 1, type: 'di:settings', settings: mergeSettings(value['settings']) };
+    case 'di:navigate': {
       const path = safePath(value['path']);
       if (!path) return null;
-      return { v: 1, type: 'oo:navigate', path };
+      return { v: 1, type: 'di:navigate', path };
     }
-    case 'oo:pin': {
+    case 'di:pin': {
       const id = value['id'];
-      if (id === null) return { v: 1, type: 'oo:pin', id: null };
+      if (id === null) return { v: 1, type: 'di:pin', id: null };
       if (typeof id !== 'string' || id.length > 128 || !/^[A-Za-z0-9_-]+$/.test(id)) return null;
-      return { v: 1, type: 'oo:pin', id };
+      return { v: 1, type: 'di:pin', id };
     }
     default:
       return null;

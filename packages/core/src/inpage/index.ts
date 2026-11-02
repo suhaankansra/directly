@@ -30,7 +30,7 @@ import { createToast, type Toast } from './toast.js';
 export const CORE_VERSION = '0.1.0';
 
 /** Marker the extension and the iOS host use to confirm injection. */
-export const GLOBAL_KEY = '__onlyInbox';
+export const GLOBAL_KEY = '__directly';
 
 export type BootOptions = {
   win?: Window;
@@ -76,7 +76,7 @@ function defaultPost(win: Window): (message: PageMessage) => void {
         bridge.ReactNativeWebView.postMessage(JSON.stringify(message));
         return;
       }
-      const handler = bridge.webkit?.messageHandlers?.['onlyInbox'];
+      const handler = bridge.webkit?.messageHandlers?.['directly'];
       if (handler?.postMessage) {
         handler.postMessage(message);
         return;
@@ -248,13 +248,13 @@ export function boot(options: BootOptions = {}): Booted {
     const username = detectAccount();
     if (username === lastAccount) return;
     lastAccount = username;
-    post({ v: 1, type: 'oo:account', username });
+    post({ v: 1, type: 'di:account', username });
   }
 
   function publishUrl(): void {
     const path = normalizePath(win.location.href);
-    post({ v: 1, type: 'oo:url', path, layout: currentLayout(), pinId: pin });
-    post({ v: 1, type: 'oo:tab', tab: tabForPath(path) });
+    post({ v: 1, type: 'di:url', path, layout: currentLayout(), pinId: pin });
+    post({ v: 1, type: 'di:tab', tab: tabForPath(path) });
     nav?.sync(win.location.href);
     publishAccount();
   }
@@ -277,10 +277,10 @@ export function boot(options: BootOptions = {}): Booted {
     onBlocked: (verdict) => {
       if (settings.debug) {
         // eslint-disable-next-line no-console
-        console.debug('[only-inbox] blocked', verdict.reason, verdict.path);
+        console.debug('[directly] blocked', verdict.reason, verdict.path);
       }
-      post({ v: 1, type: 'oo:blocked', path: verdict.path, reason: verdict.reason });
-      if (settings.showBlockToast) toast.show('Only Inbox — that’s not here');
+      post({ v: 1, type: 'di:blocked', path: verdict.path, reason: verdict.reason });
+      if (settings.showBlockToast) toast.show('Directly — that’s not here');
     },
   });
 
@@ -320,15 +320,15 @@ export function boot(options: BootOptions = {}): Booted {
   function applyHostMessage(message: ReturnType<typeof parseHostMessage>): void {
     if (!message) return;
     switch (message.type) {
-      case 'oo:settings':
+      case 'di:settings':
         settings = message.settings;
         observer.flush();
         cleanupNow();
         break;
-      case 'oo:navigate':
+      case 'di:navigate':
         navigate(message.path);
         break;
-      case 'oo:pin':
+      case 'di:pin':
         pin = message.id;
         if (message.id) reelLock.arm(message.id);
         else reelLock.disarm();

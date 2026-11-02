@@ -1,5 +1,5 @@
 {
-  "name": "@only-inbox/extension",
+  "name": "@directly/extension",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -8,7 +8,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@only-inbox/core": "workspace:*"
+    "@directly/core": "workspace:*"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

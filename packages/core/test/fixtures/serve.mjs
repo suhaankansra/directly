@@ -66,7 +66,7 @@ function page(pathname) {
       .fixture-note { margin: 16px; color: #7d7d8a; font-size: 12px; }
     </style>
     <script>
-      window.__onlyInboxOptions = { host: 'extension', showNav: true, settings: { debug: true } };
+      window.__directlyOptions = { host: 'extension', showNav: true, settings: { debug: true } };
     </script>
     <script>
       // A miniature SPA router, installed BEFORE the core so that the core wraps
@@ -132,7 +132,7 @@ const server = createServer(async (req, res) => {
       res.end(body);
     } catch {
       res.writeHead(500, { 'content-type': 'text/plain' });
-      res.end('build the core first: pnpm --filter @only-inbox/core build');
+      res.end('build the core first: pnpm --filter @directly/core build');
     }
     return;
   }

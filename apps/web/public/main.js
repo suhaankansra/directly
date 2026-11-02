@@ -1,4 +1,4 @@
-/* Only Inbox — the entire client-side script. No cookies, no analytics, no fonts. */
+/* Directly — the entire client-side script. No cookies, no analytics, no fonts. */
 (function () {
   'use strict';
 

@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Only Inbox",
-    "slug": "only-inbox",
+    "name": "Directly",
+    "slug": "directly",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "onlyinbox",
+    "scheme": "directly",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
@@ -15,14 +15,14 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.onlyinbox.app",
+      "bundleIdentifier": "com.directly.app",
       "requireFullScreen": false,
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": true
       }
     },
     "android": {
-      "package": "com.onlyinbox.app",
+      "package": "com.directly.app",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

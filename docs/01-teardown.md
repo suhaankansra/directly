@@ -2,7 +2,7 @@
 
 **Phase:** 1 of 11 · **Status:** complete · **Date:** 2026-11-01
 **Source of truth:** the written teardown of the creator's 16-second iPhone screen recording (master prompt §1.1–1.9). We have no binary, no source, and we are not getting either.
-**Our product name:** Only Inbox. **Scope of this phase:** documentation only. No code, no scaffolding, no packages installed.
+**Our product name:** Directly. **Scope of this phase:** documentation only. No code, no scaffolding, no packages installed.
 
 ---
 
@@ -106,7 +106,7 @@ Grouped by surface. Each item is tagged with how well the video supports it:
 
 The whole product is this table. "Route" column is the mobile-web path **we expect** to own each surface; every one of them is unverified until Phase 3.
 
-| Surface | Expected route | Konvo (video) | Only Inbox (our intent) | Evidence |
+| Surface | Expected route | Konvo (video) | Directly (our intent) | Evidence |
 |---|---|---|---|---|
 | Launch | — | inbox | inbox | F1 |
 | DM inbox | `/direct/inbox/` | **allow** | allow | F9–F13 |
@@ -230,8 +230,8 @@ Numbered so you can answer them by number. Each has my default if you'd rather j
 **Q6 — Unread badges.** The video shows no badge on the tab bar. *My recommendation: none in v1 — a badge is a pull back onto the phone, and the product is about the opposite.*
 **Q7 — Voice notes and camera.** The composer shows a mic. Recording audio in a WKWebView needs a microphone usage string and a permission prompt; stickers may need the IG camera surface. *My recommendation: support mic (needs your Info.plist consent text in Phase 5), accept the system photo picker, and if the sticker/AR camera surface is broken in a WebView, hide the sticker button rather than ship a dead icon.*
 **Q8 — Login breadth.** First run must survive login, 2FA, and an "unusual activity" challenge. That means allowing a fairly wide set of `/accounts/*` and `/challenge/*` paths, which is the loosest part of the allowlist. *My recommendation: allow broadly for `/accounts/*` and `/challenge/*`, then immediately redirect to the inbox once authenticated.*
-**Q9 — Where does the repo live?** My sandbox workspace is empty and thread-scoped. Phase 4 will scaffold a pnpm monorepo. Do you want it here, or in a folder of your choosing (e.g. `~/dev/only-inbox`) that you'll open as the project? *My recommendation: tell me a real path in Phase 4 so `git init` lands somewhere you'll actually work.*
-**Q10 — Bundle id / handles.** Needed in Phase 4: reverse-DNS bundle id, and whether you own a domain for the website. *My recommendation: `com.onlyinbox.app` and `onlyinbox.app`, confirm or correct.*
+**Q9 — Where does the repo live?** My sandbox workspace is empty and thread-scoped. Phase 4 will scaffold a pnpm monorepo. Do you want it here, or in a folder of your choosing (e.g. `~/dev/directly`) that you'll open as the project? *My recommendation: tell me a real path in Phase 4 so `git init` lands somewhere you'll actually work.*
+**Q10 — Bundle id / handles.** Needed in Phase 4: reverse-DNS bundle id, and whether you own a domain for the website. *My recommendation: `com.directly.app` and `directly.app`, confirm or correct.*
 **Q11 — Lock tab, final answer.** Per your settings this is decided in Phase 2; just confirming you want the three options laid out with a recommendation rather than a decision now.
 **Q12 — One thing the prompt asserts that the video does not show:** §1.9 says stories and single posts aren't in the allowed list, but the composer and threads will surface them constantly. Do you want the *product promise* to be "DMs only" strictly (block everything not in the allowed list, including a photo a friend sends), or "no browsing" (allow a single item a friend sent, block everything that continues)? *My recommendation: "no browsing". It's the sentence the whole product is built on, and it's the only version a user won't find hostile.*
 

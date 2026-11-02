@@ -4,9 +4,9 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '@only-inbox/core';
+import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '@directly/core';
 
-const KEY = 'onlyInbox.settings.v1';
+const KEY = 'directly.settings.v1';
 
 export async function loadSettings(): Promise<Settings> {
   try {

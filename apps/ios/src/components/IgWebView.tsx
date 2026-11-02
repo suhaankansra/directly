@@ -9,7 +9,7 @@ import {
   type Layout,
   type Settings,
   type TabId,
-} from '@only-inbox/core';
+} from '@directly/core';
 
 import { injectionScript, navigateMessage, readPageMessage, settingsMessage } from '../lib/bridge';
 import { inpageScript } from '../lib/injectedScript';
@@ -133,21 +133,21 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       if (!message) return;
 
       switch (message.type) {
-        case 'oo:url': {
+        case 'di:url': {
           lastPath.current = message.path;
           pinRef.current = message.pinId;
           onRoute(message.path, message.layout, message.pinId, tabForPath(message.path));
           break;
         }
-        case 'oo:tab': {
+        case 'di:tab': {
           onRoute(lastPath.current, 'mobile', pinRef.current, message.tab);
           break;
         }
-        case 'oo:blocked': {
+        case 'di:blocked': {
           onBlocked(message.reason, message.path);
           break;
         }
-        case 'oo:account': {
+        case 'di:account': {
           onAccount(message.username);
           break;
         }

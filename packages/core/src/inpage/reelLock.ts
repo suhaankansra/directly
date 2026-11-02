@@ -19,9 +19,9 @@
 import type { Layout } from '../routes.js';
 import type { SelectorResolver } from './selector.js';
 
-const ACTIVE_ATTR = 'data-oo-slide-active';
-const HIDDEN_ATTR = 'data-oo-slide-hidden';
-const LOCK_ATTR = 'data-oo-reel-locked';
+const ACTIVE_ATTR = 'data-di-slide-active';
+const HIDDEN_ATTR = 'data-di-slide-hidden';
+const LOCK_ATTR = 'data-di-reel-locked';
 
 export type ReelLock = {
   arm: (id: string) => void;

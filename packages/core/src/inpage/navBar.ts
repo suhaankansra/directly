@@ -128,15 +128,15 @@ export function createNavBar(deps: NavBarDeps): NavBar {
   function mount(): void {
     if (host) return;
     host = doc.createElement('div');
-    host.id = 'only-inbox-nav';
-    host.setAttribute('data-only-inbox', 'nav');
+    host.id = 'directly-nav';
+    host.setAttribute('data-directly', 'nav');
     shadow = host.attachShadow({ mode: 'open' });
     const style = doc.createElement('style');
     style.textContent = STYLE;
     shadow.appendChild(style);
     bar = doc.createElement('nav');
     bar.className = `bar bar--${currentLayout}`;
-    bar.setAttribute('aria-label', 'Only Inbox');
+    bar.setAttribute('aria-label', 'Directly');
     for (const tab of ORDER) bar.appendChild(item(tab));
     shadow.appendChild(bar);
     doc.documentElement.appendChild(host);

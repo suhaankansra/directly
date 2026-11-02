@@ -64,7 +64,7 @@ export function createObserver(deps: ObserverDeps): Observer {
       for (const mutation of mutations) {
         if (mutation.type === 'attributes') {
           const name = mutation.attributeName ?? '';
-          if (name.startsWith('data-oo-')) continue;
+          if (name.startsWith('data-di-')) continue;
         }
         schedule();
         return;

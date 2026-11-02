@@ -11,7 +11,7 @@
  * or credential is ever read.
  */
 
-import { DEFAULT_SETTINGS, hostVerdict, mergeSettings, normalizePath, type Settings } from '@only-inbox/core';
+import { DEFAULT_SETTINGS, hostVerdict, mergeSettings, normalizePath, type Settings } from '@directly/core';
 
 type TabPathMap = Map<number, string>;
 
@@ -45,7 +45,7 @@ if (!chromeApi) {
 
   api.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     const type = (message as { type?: string } | null)?.type;
-    if (type === 'oo:open-settings') {
+    if (type === 'di:open-settings') {
       api.runtime.openOptionsPage();
       sendResponse({ ok: true });
     }

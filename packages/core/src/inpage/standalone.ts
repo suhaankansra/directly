@@ -2,7 +2,7 @@
  * Self-booting entry. This is what `dist/inpage.txt` contains, and what the iOS
  * WebView evaluates after each navigation.
  *
- * The host may set `window.__onlyInboxOptions` before evaluating the script to
+ * The host may set `window.__directlyOptions` before evaluating the script to
  * pass the initial pin (a reel the user opened from a DM) or to change the
  * surface. Everything is validated inside `boot`; nothing here trusts the host
  * beyond a plain object.
@@ -12,12 +12,12 @@ import { boot, type BootOptions } from './index.js';
 
 declare global {
   interface Window {
-    __onlyInboxOptions?: Partial<BootOptions>;
+    __directlyOptions?: Partial<BootOptions>;
   }
 }
 
 try {
-  const provided = typeof window !== 'undefined' ? window.__onlyInboxOptions : undefined;
+  const provided = typeof window !== 'undefined' ? window.__directlyOptions : undefined;
   const options: BootOptions = {
     host: 'ios',
     showNav: false,

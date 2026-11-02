@@ -9,7 +9,7 @@ knowingly left.
 |---|---|---|
 | Credentials | Nothing in `packages/core` reads `document.cookie`, form fields, or storage. The only `document.cookie` use is `guessLoggedIn()` in `inpage/index.ts`, and it tests for the **presence** of `ds_user_id` without reading its value. | Keep. Consider dropping if it ever feels like a slippery slope; it only affects the unknown-route fallback. |
 | Session storage | iOS relies on WKWebView's own cookie store (`sharedCookiesEnabled`); the extension relies on the browser's. No copy exists in app storage. | Keep. |
-| Message content | The bridge protocol has no field that can carry a message. `oo:url` carries a path, `oo:account` a username, `oo:blocked` a reason code. | Keep. A future feature that needs more must add a validated type, which is a visible diff. |
+| Message content | The bridge protocol has no field that can carry a message. `di:url` carries a path, `di:account` a username, `di:blocked` a reason code. | Keep. A future feature that needs more must add a validated type, which is a visible diff. |
 | Bridge trust | `parsePageMessage` / `parseHostMessage` enforce `v === 1`, a known type, path must start with `/`, no backslashes, ≤ 512 chars, payload ≤ 4 kB, pins/usernames regex-limited. | Tested. Unknown input is dropped, never forwarded, never evaluated. |
 | Origin checks | Extension content script ignores `message` events unless `event.source === window` **and** `event.origin === location.origin`. iOS trusts only the WebView's own channel plus the same validation. | Keep. A cross-origin frame cannot drive the page's settings. |
 | Remote config | Fetched as JSON only, `credentials: 'omit'`, 4 s timeout, ≤ 64 kB, merged through a whitelist: known keys, `string[]` values, ≤ 400 chars, no `{` and no newlines. No `eval`, no `new Function`, no dynamic import. | This is the policy-safe shape (data, not code). Tested indirectly; the merge rejects unknown keys. |
@@ -22,7 +22,7 @@ knowingly left.
 
 - **One** MutationObserver for the whole script, `childList + subtree` only (never `attributes`,
   which is the expensive one), coalesced with a 150 ms floor and `requestIdleCallback` when available.
-  Our own `data-oo-*` attribute writes are ignored so we cannot loop.
+  Our own `data-di-*` attribute writes are ignored so we cannot loop.
 - Cleanup runs on route change and on mutation batches, not on a timer. The text scan for "Use the
   app" only inspects leaf elements (`children.length === 0`) with ≤ 40 chars of text.
 - The reel lock's `tick()` walks `article` elements, which on a reel page number in the low tens.
@@ -35,7 +35,7 @@ knowingly left.
 ## 3. Remote selector config — the design, concretely
 
 ```
-GET https://<your-host>/only-inbox/selectors.mobile.json
+GET https://<your-host>/directly/selectors.mobile.json
 {
   "version": 1,
   "selectors": { "reelScroller": ["div[style*='scroll-snap-type']", "…"] }
@@ -61,7 +61,7 @@ GET https://<your-host>/only-inbox/selectors.mobile.json
 | R4 | **Chrome Web Store policy.** | Single purpose ("reduce Instagram to its DM inbox") is clear. Remote *data* is allowed; remote *code* is not, which is why the config is JSON. `webNavigation` + `tabs` will be scrutinised. | Write the permission justification before submitting (see 11-ship-prep). Consider dropping `tabs`. |
 | R5 | **Instagram changes its DOM.** | Certain to happen. | Blocking is URL-based and fails closed. Cosmetic rules are `href`/`aria-label`/`role`-based and fail open. Selector lists are hot-swappable data. |
 | R6 | **Instagram blocks embedded WebViews outright** (user-agent sniffing). | Plausible; many social sites do this to in-app browsers. | Same detection path as R1: one login attempt answers it. Fallback: hide nothing, load in Safari via `SFSafariViewController`? — that has no injection, so it is not a fallback. |
-| R7 | **Trademark.** | "Instagram" in the name or icon would be a problem. | Product name is "Only Inbox"; marketing copy says "for Instagram" descriptively, never "Instagram DMs Only". The site carries a non-affiliation line. All icons are generated here, nothing traced. |
+| R7 | **Trademark.** | "Instagram" in the name or icon would be a problem. | Product name is "Directly"; marketing copy says "for Instagram" descriptively, never "Instagram DMs Only". The site carries a non-affiliation line. All icons are generated here, nothing traced. |
 | R8 | **Telling users this reduces screen time.** | It is a plausible claim, not a measured one. | Do not put "reduce screen time" in the App Store subtitle without data. Say what it does instead. |
 | R9 | **Sign-out on iOS.** | Requires a native cookie module; in Expo Go it cannot work. | `signOut()` tries the module and falls back; document the dev-build requirement. |
 | R10 | **Android.** | Out of scope, but the code must not block it. | Route rules, guard and lock are platform-neutral; the WebView component takes `ApplicationName` and hardware back already. Nothing in core assumes iOS. |

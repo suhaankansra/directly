@@ -34,8 +34,8 @@ const DESCRIPTION =
 function baseManifest() {
   return {
     manifest_version: 3,
-    name: 'Only Inbox',
-    short_name: 'Only Inbox',
+    name: 'Directly',
+    short_name: 'Directly',
     version,
     description: DESCRIPTION,
     icons: ICONS,
@@ -44,7 +44,7 @@ function baseManifest() {
     permissions: ['storage', 'webNavigation'],
     host_permissions: ['https://www.instagram.com/*', 'https://instagram.com/*'],
     action: {
-      default_title: 'Only Inbox',
+      default_title: 'Directly',
       default_popup: 'popup.html',
       default_icon: ICONS,
     },
@@ -75,7 +75,7 @@ function firefoxManifest() {
     background: { scripts: ['background.js'] },
     browser_specific_settings: {
       gecko: {
-        id: 'only-inbox@example.com',
+        id: 'directly@example.com',
         strict_min_version: '121.0',
       },
     },

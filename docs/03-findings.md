@@ -57,7 +57,7 @@ in, and I will not ask for credentials. This is the honest state of Phase 3:
 - The **cosmetic** layer (hiding IG's nav, the "Use the app" banner, sibling reel slides) does depend
   on them, and is built to be verifiable and correctable without a release:
   `href` / `aria-label` / `role` hooks only, a JSON override file (data, not code), and a
-  failure counter exposed as `window.__onlyInbox.api.diagnostics()`.
+  failure counter exposed as `window.__directly.api.diagnostics()`.
 - The reel lock's primary mechanism — hide every non-active `article` that contains a `video` — is
   structural and does not need a specific selector at all. The selectors are the fallback for when
   Instagram has no `article` in the reel modal.
@@ -75,16 +75,16 @@ injects the **real built** `dist/inpage.js`. Results in Chromium at 390×844 and
 | Cold deep link to `/reel/Cdeep/` (no DM origin) | redirected to `/direct/inbox/` |
 | `/direct/t/42/` | loads normally |
 | Tap reel inside a DM (`pushState /reel/Cabc/`) | allowed, pin armed (`Cabc`) |
-| Slides after the first | `data-oo-slide-hidden="true"` (second and third) |
-| Active slide | `data-oo-slide-active="true"`, video `loop = true` |
+| Slides after the first | `data-di-slide-hidden="true"` (second and third) |
+| Active slide | `data-di-slide-active="true"`, video `loop = true` |
 | Next/prev chevrons | hidden |
 | `pushState /reel/Cdef/` while pinned | blocked, redirected to inbox |
 | Clicking an `<a href="/reels/">` | intercepted, redirected, link never followed |
 | Injected nav | 4 items, correct active tab from URL, bottom bar at 390px |
 | At 1440px | nav becomes a 76×900 left rail, `padding-left: 76px` |
-| IG's own `nav[role=navigation]` | `data-oo-removed="ig-nav"` |
-| "Use the app" banner | `data-oo-removed="app-banner"` |
-| Inline CSS injected | yes (`#oo-theme` present, 49.5 kB script) |
+| IG's own `nav[role=navigation]` | `data-di-removed="ig-nav"` |
+| "Use the app" banner | `data-di-removed="app-banner"` |
+| Inline CSS injected | yes (`#di-theme` present, 49.5 kB script) |
 
 That is the blocking layer exercised end to end in a browser, minus Instagram's own markup.
 

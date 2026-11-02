@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
-import type { Settings } from '@only-inbox/core';
+import type { Settings } from '@directly/core';
 
 import { colors, radius, spacing } from '../theme';
 
@@ -52,7 +52,7 @@ export function LockScreen({ settings, username, onChange, onOpenProfile, onSign
         <Text style={styles.cardTitle}>Account</Text>
         <Text style={styles.account}>{username ? `@${username}` : 'Signed in'}</Text>
         <Text style={styles.note}>
-          You are signed in inside this app’s own web view. Only Inbox never sees your password, your
+          You are signed in inside this app’s own web view. Directly never sees your password, your
           cookies or your messages.
         </Text>
         <View style={styles.buttons}>
@@ -102,7 +102,7 @@ export function LockScreen({ settings, username, onChange, onOpenProfile, onSign
         </Text>
       </View>
 
-      <Text style={styles.version}>Only Inbox {version}</Text>
+      <Text style={styles.version}>Directly {version}</Text>
     </ScrollView>
   );
 }

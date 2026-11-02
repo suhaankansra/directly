@@ -2,7 +2,7 @@
  * The host-facing API: everything the iOS app needs to make route decisions and
  * to talk to the in-page script, with no DOM access at import time.
  *
- * The in-page modules live behind `@only-inbox/core/inpage` so that importing
+ * The in-page modules live behind `@directly/core/inpage` so that importing
  * this package in React Native does not pull in `window`/`document` code.
  */
 

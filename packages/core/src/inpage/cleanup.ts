@@ -33,7 +33,7 @@ const REMOVABLE_ROLES = new Set(['banner', 'dialog', 'complementary']);
 
 function markRemoved(el: Element, label: string, deps: CleanupDeps): void {
   const html = el as HTMLElement;
-  html.setAttribute('data-oo-removed', label);
+  html.setAttribute('data-di-removed', label);
   html.style.setProperty('display', 'none', 'important');
   deps.onRemoved?.(label);
 }
@@ -54,7 +54,7 @@ export function runCleanup(deps: CleanupDeps): void {
   const doc = win.document;
   const settings = deps.getSettings();
   const root = doc.documentElement;
-  root.setAttribute('data-oo-cleaned', '1');
+  root.setAttribute('data-di-cleaned', '1');
 
   // 1. Hide Instagram's own navigation: our four tabs (native bar on iOS, our
   //    injected bar in the extension) are the only navigation now.
@@ -76,7 +76,7 @@ export function runCleanup(deps: CleanupDeps): void {
   };
   const anchors = Array.from(doc.querySelectorAll('a[href]'));
   for (const anchor of anchors) {
-    if (anchor.closest('[data-oo-keep]')) continue;
+    if (anchor.closest('[data-di-keep]')) continue;
     const href = anchor.getAttribute('href');
     if (!href) continue;
     let absolute: string;

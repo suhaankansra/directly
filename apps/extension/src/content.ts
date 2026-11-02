@@ -8,8 +8,8 @@
  * default settings.
  */
 
-import { boot, GLOBAL_KEY } from '@only-inbox/core/inpage';
-import { mergeSettings, type Settings } from '@only-inbox/core';
+import { boot, GLOBAL_KEY } from '@directly/core/inpage';
+import { mergeSettings, type Settings } from '@directly/core';
 import { api, openOptionsPage, readStoredState, DEFAULT_STORED_STATE } from './platform.js';
 
 const booted = boot({
@@ -19,7 +19,7 @@ const booted = boot({
   openSettings: () => {
     // Ask the background to open the options page; a content script cannot.
     try {
-      const sent = api?.runtime?.sendMessage?.({ type: 'oo:open-settings' });
+      const sent = api?.runtime?.sendMessage?.({ type: 'di:open-settings' });
       if (sent && typeof (sent as Promise<unknown>).catch === 'function') {
         (sent as Promise<unknown>).catch(() => openOptionsPage());
       }
@@ -34,7 +34,7 @@ void readStoredState().then((stored) => {
   if (stored.settings.debug) {
     // Local-only diagnostics: which selector keys failed, and where we are.
     // eslint-disable-next-line no-console
-    console.debug('[only-inbox] live', booted.diagnostics());
+    console.debug('[directly] live', booted.diagnostics());
   }
 });
 

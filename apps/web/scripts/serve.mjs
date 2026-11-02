@@ -45,7 +45,7 @@ const server = createServer(async (req, res) => {
     res.end(body);
   } catch {
     res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });
-    res.end('<h1>404</h1><p><a href="/">Only Inbox</a></p>');
+    res.end('<h1>404</h1><p><a href="/">Directly</a></p>');
   }
 });
 

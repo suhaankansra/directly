@@ -187,7 +187,7 @@ importers:
 
   apps/extension:
     dependencies:
-      '@only-inbox/core':
+      '@directly/core':
         specifier: workspace:*
         version: link:../../packages/core
     devDependencies:
@@ -197,6 +197,8 @@ importers:
       esbuild:
         specifier: ^0.25.0
         version: 0.25.12
+
+  apps/web: {}
 
   packages/core:
     devDependencies:

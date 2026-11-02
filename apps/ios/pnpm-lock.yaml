@@ -8,7 +8,7 @@ importers:
 
   .:
     dependencies:
-      '@only-inbox/core':
+      '@directly/core':
         specifier: file:../../packages/core
         version: file:../../packages/core
       '@react-native-async-storage/async-storage':
@@ -406,6 +406,9 @@ packages:
     resolution: {integrity: sha512-WCsemW40Cpc6gouC1SrY6PBaZ+oLRlEVY9XBvZBI7il/HyUrb2nJ505wE1MHEFyDZNnrWDEuy4jL50WVHfTTSQ==}
     engines: {node: '>=6.9.0'}
 
+  '@directly/core@file:../../packages/core':
+    resolution: {directory: ../../packages/core, type: directory}
+
   '@expo/cli@58.1.18':
     resolution: {integrity: sha512-voZUcir9mEwvLKBNqQM6Jy2Yp67z8ONmcINXb6ZrLMayb7yxzwvEnN0eeH8ADzUABKL288pv1eJ1WRqtYxXQ/Q==}
     hasBin: true
@@ -679,9 +682,6 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
-
-  '@only-inbox/core@file:../../packages/core':
-    resolution: {directory: ../../packages/core, type: directory}
 
   '@oxc-project/types@0.154.0':
     resolution: {integrity: sha512-KYOUGQFlLWR+s4QMV2Q9ko38TZm7EdO87Qm7rvZLqk/webse/cDjtyxKhg/47l0byCbs/k46LT8qc4PKjAikzA==}
@@ -2705,6 +2705,8 @@ snapshots:
       '@babel/helper-string-parser': 7.29.11
       '@babel/helper-validator-identifier': 7.29.7
 
+  '@directly/core@file:../../packages/core': {}
+
   '@expo/cli@58.1.18(5b19d216b4b1033e75b2f521376a18a1)':
     dependencies:
       2g: 1.0.1(typescript@5.9.3)
@@ -3140,8 +3142,6 @@ snapshots:
 
   '@noxcturnal/noxcturnal-win32-x64-msvc@0.1.11':
     optional: true
-
-  '@only-inbox/core@file:../../packages/core': {}
 
   '@oxc-project/types@0.154.0': {}
 

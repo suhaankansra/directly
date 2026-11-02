@@ -7,11 +7,11 @@
 :root,
 html {
   color-scheme: dark;
-  --oo-accent: #6c5ce7;
-  --oo-accent-soft: rgba(108, 92, 231, 0.18);
-  --oo-surface: #0f0f12;
-  --oo-surface-raised: #17171c;
-  --oo-border: rgba(255, 255, 255, 0.08);
+  --di-accent: #6c5ce7;
+  --di-accent-soft: rgba(108, 92, 231, 0.18);
+  --di-surface: #0f0f12;
+  --di-surface-raised: #17171c;
+  --di-border: rgba(255, 255, 255, 0.08);
 
   /* Instagram's documented/observed theme tokens, where they exist. */
   --ig-primary-button: 108, 92, 231;
@@ -28,7 +28,7 @@ html {
 
 html,
 body {
-  background-color: var(--oo-surface) !important;
+  background-color: var(--di-surface) !important;
   color: var(--ig-primary-text);
 }
 
@@ -38,25 +38,25 @@ body {
 [style*='rgb(0,149,246)'],
 [style*='#0095F6'],
 [style*='#0095f6'] {
-  background-color: var(--oo-accent) !important;
-  border-color: var(--oo-accent) !important;
+  background-color: var(--di-accent) !important;
+  border-color: var(--di-accent) !important;
 }
 
 /* Primary buttons (Follow / Follow Back / Send) and their text. */
 button[type='button'][style*='0095F6'],
 a[role='button'][style*='0095F6'],
 div[role='button'][style*='0095F6'] {
-  background-color: var(--oo-accent) !important;
+  background-color: var(--di-accent) !important;
   color: #fff !important;
 }
 
 /* Links and active states. */
 a[role='link'],
-a[href]:not([data-oo-removed]) {
+a[href]:not([data-di-removed]) {
   --ig-link: 145, 130, 255;
 }
 
 /* Our own additions. */
-[data-oo-removed] {
+[data-di-removed] {
   display: none !important;
 }

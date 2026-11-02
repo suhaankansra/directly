@@ -49,7 +49,7 @@ docs/                       this plan, findings, decisions, test plan, review, s
 | Prompt suggested | Built | Why |
 |---|---|---|
 | `app/(tabs)/` with Expo Router | one `App.tsx` with a hand-rolled tab bar | The four tabs share **one** WebView (D016). A router would either remount it per tab or need a persistent layout anyway; the state machine is 3 variables, so a router adds a dependency and no capability. |
-| `lib/routes.ts` in the iOS app | `@only-inbox/core`'s `routes.ts` | One implementation, one test suite, no drift between iOS and the extension. |
+| `lib/routes.ts` in the iOS app | `@directly/core`'s `routes.ts` | One implementation, one test suite, no drift between iOS and the extension. |
 | `content.ts` injects `packages/core` | bundles it | Content scripts cannot use ESM without a manifest flag Firefox does not support; esbuild inlines it, and the same bundle text is what the WebView evaluates. |
 | Astro or Vite + Tailwind for the site | three HTML files + one CSS file | The site is ~1,000 words and two icons. A build step would be the only thing to go wrong. |
 
@@ -58,6 +58,6 @@ docs/                       this plan, findings, decisions, test plan, review, s
 - **iOS app runs with a dark placeholder + 4-tab bar** — code complete and typechecked; it needs a
   simulator or device I do not have in this environment. Run `cd apps/ios && npm install && npx expo run:ios`.
 - **Extension loads unpacked in Chrome and logs "core loaded"** — builds to `apps/extension/dist/chrome`;
-  the injected core logs `[only-inbox] live` with diagnostics when *Debug logging* is on.
+  the injected core logs `[directly] live` with diagnostics when *Debug logging* is on.
 - **Website runs locally** — `apps/web` serves on `http://127.0.0.1:4320`.
 - **No blocking yet** — exceeded: blocking is implemented and tested (Phases 5–8 are in this build).

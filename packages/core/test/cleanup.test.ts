@@ -17,12 +17,12 @@ function cleanup(layout: Layout = 'mobile'): void {
 
 function removed(selector: string): boolean {
   const el = document.querySelector(selector);
-  return el?.getAttribute('data-oo-removed') !== null && el?.getAttribute('data-oo-removed') !== undefined;
+  return el?.getAttribute('data-di-removed') !== null && el?.getAttribute('data-di-removed') !== undefined;
 }
 
 beforeEach(() => {
   settings = { ...DEFAULT_SETTINGS };
-  document.documentElement.removeAttribute('data-oo-cleaned');
+  document.documentElement.removeAttribute('data-di-cleaned');
   document.body.innerHTML = `
     <header><a href="/" id="logo"><img alt="Instagram"></a></header>
     <main>
@@ -43,12 +43,12 @@ beforeEach(() => {
 describe('runCleanup', () => {
   it('marks the document as cleaned', () => {
     cleanup();
-    expect(document.documentElement.getAttribute('data-oo-cleaned')).toBe('1');
+    expect(document.documentElement.getAttribute('data-di-cleaned')).toBe('1');
   });
 
   it("hides Instagram's own navigation container", () => {
     cleanup();
-    expect(document.getElementById('ignav')!.getAttribute('data-oo-removed')).toBe('ig-nav');
+    expect(document.getElementById('ignav')!.getAttribute('data-di-removed')).toBe('ig-nav');
   });
 
   it('hides links that lead to blocked routes', () => {
@@ -60,8 +60,8 @@ describe('runCleanup', () => {
 
   it('leaves allowed links alone', () => {
     cleanup();
-    expect(document.getElementById('thread')!.hasAttribute('data-oo-removed')).toBe(false);
-    expect(document.getElementById('nav-dms')!.hasAttribute('data-oo-removed')).toBe(false);
+    expect(document.getElementById('thread')!.hasAttribute('data-di-removed')).toBe(false);
+    expect(document.getElementById('nav-dms')!.hasAttribute('data-di-removed')).toBe(false);
   });
 
   it('removes the "Use the app" banner', () => {
@@ -71,23 +71,23 @@ describe('runCleanup', () => {
 
   it('does not hide a post link inside a thread', () => {
     cleanup();
-    expect(document.getElementById('dm-link')!.hasAttribute('data-oo-removed')).toBe(false);
+    expect(document.getElementById('dm-link')!.hasAttribute('data-di-removed')).toBe(false);
   });
 
   it('hides the stories tray when stories are disabled', () => {
     cleanup();
-    expect(document.querySelector('#stories > div')!.getAttribute('data-oo-removed')).toBe('stories');
+    expect(document.querySelector('#stories > div')!.getAttribute('data-di-removed')).toBe('stories');
   });
 
   it('keeps the stories tray when stories are enabled', () => {
     settings = { ...DEFAULT_SETTINGS, allowStories: true };
     cleanup();
-    expect(document.querySelector('#stories > div')!.hasAttribute('data-oo-removed')).toBe(false);
+    expect(document.querySelector('#stories > div')!.hasAttribute('data-di-removed')).toBe(false);
   });
 
   it('is idempotent', () => {
     cleanup();
     cleanup();
-    expect(document.getElementById('ignav')!.getAttribute('data-oo-removed')).toBe('ig-nav');
+    expect(document.getElementById('ignav')!.getAttribute('data-di-removed')).toBe('ig-nav');
   });
 });

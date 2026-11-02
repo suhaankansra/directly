@@ -6,7 +6,7 @@
  * makes it obvious that the iOS app and the extension run *the same* script —
  * there is no second, drifting copy of the blocking logic.
  *
- *   pnpm --filter @only-inbox/core build
+ *   pnpm --filter @directly/core build
  *   node apps/ios/scripts/gen-injection.mjs
  */
 
@@ -23,7 +23,7 @@ const script = await readFile(source, 'utf8');
 
 const banner = `// GENERATED FILE — do not edit.
 // Source: packages/core/src/inpage/** (built to packages/core/dist/inpage.js)
-// Regenerate: pnpm --filter @only-inbox/core build && node apps/ios/scripts/gen-injection.mjs
+// Regenerate: pnpm --filter @directly/core build && node apps/ios/scripts/gen-injection.mjs
 `;
 
 await writeFile(target, `${banner}\nexport const inpageScript: string = ${JSON.stringify(script)};\n`, 'utf8');

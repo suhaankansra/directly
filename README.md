@@ -1,4 +1,4 @@
-# Only Inbox
+# Directly
 
 Instagram, DMs only. The app opens straight into your messages and removes the feed, Reels and
 Explore — you can still watch the one reel a friend sent you, and then you stop.
@@ -105,4 +105,4 @@ environment. Not verified at all: anything that needs a logged-in Instagram sess
 `09-test-plan.md` §5), and the single biggest unknown, whether Instagram permits login inside a
 WKWebView (risk R1).
 
-Only Inbox is an independent project, not affiliated with Instagram or Meta.
+Directly is an independent project, not affiliated with Instagram or Meta.

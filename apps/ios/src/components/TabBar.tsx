@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import type { TabId } from '@only-inbox/core';
+import type { TabId } from '@directly/core';
 
 import { colors, radius, spacing } from '../theme';
 

@@ -4,29 +4,29 @@
  * snapping, autoplay or a swipe. When the lock disarms, the attribute is removed
  * and Instagram's own layout returns unchanged. */
 
-[data-oo-slide-hidden='true'] {
+[data-di-slide-hidden='true'] {
   display: none !important;
 }
 
-html[data-oo-reel-locked] {
+html[data-di-reel-locked] {
   overscroll-behavior: none;
   scroll-snap-type: none !important;
 }
 
-html[data-oo-reel-locked] body {
+html[data-di-reel-locked] body {
   overscroll-behavior: none;
 }
 
 /* The scroller behind the reel must not gain extra scroll range. */
-html[data-oo-reel-locked] div[style*='scroll-snap-type'] {
+html[data-di-reel-locked] div[style*='scroll-snap-type'] {
   scroll-snap-type: none !important;
   overscroll-behavior: contain;
 }
 
 /* Desktop's "next/prev" chevrons and reel dots. */
-html[data-oo-reel-locked] button[aria-label='Next'],
-html[data-oo-reel-locked] button[aria-label='Previous'],
-html[data-oo-reel-locked] svg[aria-label='Next'],
-html[data-oo-reel-locked] svg[aria-label='Previous'] {
+html[data-di-reel-locked] button[aria-label='Next'],
+html[data-di-reel-locked] button[aria-label='Previous'],
+html[data-di-reel-locked] svg[aria-label='Next'],
+html[data-di-reel-locked] svg[aria-label='Previous'] {
   display: none !important;
 }

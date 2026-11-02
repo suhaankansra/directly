@@ -5,7 +5,7 @@
  * one codebase covers Chrome, Edge, Brave, Arc, Firefox and Safari.
  */
 
-import { mergeSettings, DEFAULT_SETTINGS, type Settings } from '@only-inbox/core';
+import { mergeSettings, DEFAULT_SETTINGS, type Settings } from '@directly/core';
 
 type StorageArea = {
   get: (keys: string[] | string | null) => Promise<Record<string, unknown>>;

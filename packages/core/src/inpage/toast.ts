@@ -46,7 +46,7 @@ export function createToast(win: Window): Toast {
   function ensure(): HTMLElement {
     if (pill) return pill;
     host = doc.createElement('div');
-    host.id = 'only-inbox-toast';
+    host.id = 'directly-toast';
     const shadow = host.attachShadow({ mode: 'open' });
     const style = doc.createElement('style');
     style.textContent = STYLE;

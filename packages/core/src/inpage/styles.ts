@@ -12,10 +12,10 @@ import skeleton from '../styles/skeleton.css?raw';
 import theme from '../styles/theme.css?raw';
 
 export const BUNDLED_CSS: ReadonlyArray<{ id: string; css: string }> = [
-  { id: 'oo-theme', css: theme },
-  { id: 'oo-hide-chrome', css: hideChrome },
-  { id: 'oo-blocked', css: blocked },
-  { id: 'oo-skeleton', css: skeleton },
+  { id: 'di-theme', css: theme },
+  { id: 'di-hide-chrome', css: hideChrome },
+  { id: 'di-blocked', css: blocked },
+  { id: 'di-skeleton', css: skeleton },
 ];
 
 export function injectStyles(doc: Document): void {
@@ -23,20 +23,20 @@ export function injectStyles(doc: Document): void {
     if (doc.getElementById(sheet.id)) continue;
     const style = doc.createElement('style');
     style.id = sheet.id;
-    style.setAttribute('data-only-inbox', 'style');
+    style.setAttribute('data-directly', 'style');
     style.textContent = sheet.css;
     (doc.head ?? doc.documentElement).appendChild(style);
   }
 }
 
 export function bootOverlay(doc: Document): { ready: () => void } {
-  let element = doc.getElementById('only-inbox-boot') as HTMLElement | null;
+  let element = doc.getElementById('directly-boot') as HTMLElement | null;
   if (!element) {
     element = doc.createElement('div');
-    element.id = 'only-inbox-boot';
-    element.setAttribute('data-only-inbox', 'boot');
+    element.id = 'directly-boot';
+    element.setAttribute('data-directly', 'boot');
     const mark = doc.createElement('div');
-    mark.className = 'oo-mark';
+    mark.className = 'di-mark';
     element.appendChild(mark);
     doc.documentElement.appendChild(element);
   }
