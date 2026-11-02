@@ -21,6 +21,8 @@ export type IgWebViewHandle = {
   navigate: (path: string) => void;
   pushSettings: (settings: Settings) => void;
   reload: () => void;
+  /** Drops the WebView's shared resource cache (used on sign-out). */
+  clearCache: (includeDiskFiles: boolean) => void;
 };
 
 type Props = {
@@ -36,11 +38,12 @@ type Props = {
 
 const INSTAGRAM_HOST = /^https:\/\/(www\.)?instagram\.com(\/|$)/i;
 
-/** The three imperative methods this app uses. */
+/** The imperative methods this app uses. */
 type WebViewCommands = {
   goBack: () => void;
   reload: () => void;
   injectJavaScript: (script: string) => void;
+  clearCache?: (includeDiskFiles: boolean) => void;
 };
 
 /**
@@ -87,6 +90,9 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       reload: () => {
         setFirstPaint(false);
         webRef.current?.reload();
+      },
+      clearCache: (includeDiskFiles: boolean) => {
+        webRef.current?.clearCache?.(includeDiskFiles);
       },
     }),
     [navigate],
@@ -197,7 +203,10 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
         allowsBackForwardNavigationGestures
-        decelerationRate="normal"
+        // Numeric form on purpose: iOS also accepts the string "normal", but
+        // Android's generated binding casts this prop straight to Double and
+        // throws "String cannot be cast to Double" while creating the view.
+        decelerationRate={0.998}
         contentInsetAdjustmentBehavior="never"
         setSupportMultipleWindows={false}
         javaScriptEnabled

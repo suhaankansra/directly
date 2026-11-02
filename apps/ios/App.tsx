@@ -91,20 +91,19 @@ function Shell() {
   );
 
   const signOut = useCallback(async () => {
-    // Best-effort: clearing the WebView's cookie jar requires the optional
-    // native module, which is only present in a development/production build.
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const cookies = require('@react-native-cookies/cookies');
-      await cookies.default.clearAll(true);
-    } catch {
-      // Expo Go has no native cookie module; signing out from Instagram's own
-      // page below still ends the session server-side.
-    }
+    // Sign-out is Instagram's own: its logout route ends the session server-side
+    // and clears the cookies it set, so there is no cookie jar of ours to empty.
+    // The native cookie module this used to call was removed — its Android build
+    // script still invoked jcenter(), which Gradle 9 dropped, so it cannot be
+    // built at all, and a dependency that will not compile is not worth having.
     setLockOpen(false);
     setTab('inbox');
+    try {
+      web.current?.clearCache?.(true);
+    } catch {
+      // Cache clearing is best-effort; the navigation below is what signs out.
+    }
     web.current?.navigate('/accounts/logout/');
-    web.current?.reload();
   }, []);
 
   useEffect(() => {

@@ -28,6 +28,22 @@ pnpm test           # 120 unit tests (routes, guard, reel lock, cleanup, protoco
 pnpm typecheck      # core, extension, web
 ```
 
+### The app (iOS + Android)
+
+The Expo app lives in `apps/ios` and targets both platforms from one codebase.
+
+```bash
+cd apps/ios
+pnpm typecheck
+pnpm ios            # expo run:ios      — needs Xcode
+pnpm android        # expo run:android  — needs JDK 17 + Android SDK
+```
+
+For a first run, `npx expo prebuild --platform android --clean` generates
+`android/`, and `android/local.properties` must point at your SDK
+(`sdk.dir=/Users/you/Library/Android/sdk`). The generated `android/` and `ios/`
+folders are gitignored — they are build output, not source.
+
 ### Try the browser surfaces without an account
 
 ```bash

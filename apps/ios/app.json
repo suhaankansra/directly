@@ -23,7 +23,6 @@
     },
     "android": {
       "package": "com.directly.app",
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "plugins": [],
