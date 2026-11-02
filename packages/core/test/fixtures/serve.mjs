@@ -12,6 +12,7 @@
  */
 
 import { createServer } from 'node:http';
+import { createServer as createSecureServer } from 'node:https';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -39,7 +40,7 @@ const REEL_VIEW = `
     <button aria-label="Next" id="reel-next">next</button>
   </div>`;
 
-function page(pathname) {
+function page(pathname, bare = false) {
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -92,7 +93,7 @@ function page(pathname) {
         window.addEventListener('popstate', function () { window.__fixtureRender(); });
       })();
     </script>
-    <script src="/inpage.js"></script>
+    ${bare ? '<!-- no core: the extension under test injects it -->' : '<script src="/inpage.js"></script>'}
   </head>
   <body data-path="${pathname}">
     <div id="app"></div>
@@ -121,7 +122,7 @@ function page(pathname) {
 </html>`;
 }
 
-const server = createServer(async (req, res) => {
+const handler = async (req, res) => {
   const url = new URL(req.url ?? '/', `http://127.0.0.1:${PORT}`);
   const pathname = url.pathname;
 
@@ -143,13 +144,38 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' });
-  res.end(page(pathname));
-});
+  // `?nocore=1` serves the page without the in-page script, so a browser
+  // extension loading its own copy is the only thing under test. The flag is
+  // also set as a cookie: a guard redirect drops the query string, and without
+  // this the target page would load the fixture's own core as well and the
+  // extension's copy would look duplicated.
+  const bare = url.searchParams.get('nocore') === '1' || /(?:^|;\s*)nocore=1/.test(req.headers.cookie ?? '');
+  const headers = { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' };
+  if (url.searchParams.get('nocore') === '1') headers['set-cookie'] = 'nocore=1; Path=/; SameSite=Lax';
+  res.writeHead(200, headers);
+  res.end(page(pathname, bare));
+};
+
+const server = createServer(handler);
 
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`fixture on http://127.0.0.1:${PORT}/  (paths: /, /direct/inbox/, /reel/Cabc/, /explore/)`);
 });
+
+// A browser extension only runs on https, so verifying the extension needs the
+// same fixture over TLS. Point --host-resolver-rules at this port to make
+// www.instagram.com resolve here. Certificates are supplied by the caller; none
+// are committed.
+if (process.env.TLS_CERT && process.env.TLS_KEY) {
+  const TLS_PORT = Number.parseInt(process.env.TLS_PORT ?? '', 10) || 8443;
+  const [cert, key] = await Promise.all([
+    readFile(process.env.TLS_CERT),
+    readFile(process.env.TLS_KEY),
+  ]);
+  createSecureServer({ cert, key }, handler).listen(TLS_PORT, '127.0.0.1', () => {
+    console.log(`fixture on https://127.0.0.1:${TLS_PORT}/  (TLS, for extension checks)`);
+  });
+}
 
 for (const signal of ['SIGINT', 'SIGTERM']) {
   process.on(signal, () => {
