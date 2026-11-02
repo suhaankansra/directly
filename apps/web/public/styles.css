@@ -180,11 +180,59 @@ footer { border-top: 1px solid var(--border); padding: 28px 0 44px; margin-top: 
 .footer-links a { color: var(--muted); }
 .legal-note { font-size: 0.8rem; color: #77778a; max-width: 62ch; margin-top: 16px; }
 
+/* -------------------------------------------------------- launch pages */
+.page-head { padding: clamp(32px, 6vw, 68px) 0 clamp(8px, 2vw, 18px); }
+.page-head .lede { max-width: 62ch; }
+
+.features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.feature {
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.feature h3 { margin: 0; }
+.feature p { margin: 0; font-size: 0.92rem; color: var(--muted); }
+.feature .tag {
+  font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase;
+  color: var(--accent-bright); font-weight: 700;
+}
+
+.changelog { display: grid; gap: 16px; max-width: 76ch; }
+.release {
+  background: var(--bg-raised); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.release-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 4px; }
+.release-head h2 { margin: 0; font-size: 1.12rem; }
+.release-date { font-size: 0.8rem; color: var(--muted); }
+.release ul { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 8px; }
+.release li { color: #dcdce6; font-size: 0.93rem; }
+.release li::marker { color: var(--accent-bright); }
+.release p.small { margin: 12px 0 0; }
+
+.cta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px;
+  background: linear-gradient(140deg, rgba(108, 92, 231, 0.18), rgba(108, 92, 231, 0.03));
+  border: 1px solid rgba(108, 92, 231, 0.32);
+  border-radius: var(--radius); padding: clamp(18px, 3vw, 28px);
+}
+.cta h2 { margin: 0 0 8px; font-size: clamp(1.2rem, 2.6vw, 1.5rem); }
+.cta p { margin: 0; font-size: 0.93rem; color: var(--muted); max-width: 62ch; }
+
+code {
+  font: 0.9em/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border); border-radius: 6px; padding: 1px 5px;
+  /* File paths are long and unbreakable; without this a single token pushes the
+   * whole page sideways on a phone. */
+  overflow-wrap: anywhere;
+}
+
 /* ----------------------------------------------------------- responsive */
 @media (max-width: 900px) {
   .hero-grid { grid-template-columns: 1fr; }
   .phone { order: -1; width: min(280px, 78vw); }
-  .steps, .install { grid-template-columns: 1fr; }
+  .steps, .install, .features { grid-template-columns: 1fr; }
   .two-col { grid-template-columns: 1fr; }
 }
 

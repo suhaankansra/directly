@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Directly — changelog</title>
+    <meta name="description" content="What changed in Directly, in order, including what is still unproven." />
+    <meta name="theme-color" content="#0a0a0d" />
+    <link rel="icon" href="assets/icon-192.png" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta property="og:title" content="Directly — changelog" />
+    <meta property="og:description" content="What changed in Directly, and what is still unproven." />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap nav">
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span> Directly</a>
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <nav class="nav-links" id="nav-links" aria-label="Main">
+          <a href="features.html">Features</a>
+          <a href="changelog.html" aria-current="page">Changelog</a>
+          <a href="index.html#get">Get it</a>
+          <a href="help.html">Help</a>
+          <a href="privacy.html">Privacy</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-head">
+        <div class="wrap">
+          <span class="eyebrow">Changelog</span>
+          <h1>What changed, and when.</h1>
+          <p class="lede">
+            Newest first. Nothing here is on a store yet, so every entry describes something you can
+            build and run yourself today — and each one says what has actually been tested.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <div class="wrap">
+          <div class="changelog">
+            <article class="release">
+              <div class="release-head">
+                <h2>0.1.0 — renamed to Directly</h2>
+                <span class="release-date">2 November 2026</span>
+              </div>
+              <ul>
+                <li>The product is now <strong>Directly</strong>, everywhere: app name, bundle id, extension, this site and the code itself.</li>
+                <li>The iOS app builds and launches in the simulator for the first time.</li>
+                <li>One internal namespace, <code>di-</code>, replaces the placeholder one in attributes, CSS and the page↔app protocol.</li>
+                <li>New pages here: this changelog and the features page.</li>
+              </ul>
+              <p class="small muted">
+                Still unproven: whether Instagram permits a sign-in inside the app's own web view, and
+                the selector list has not yet been checked against a signed-in account.
+              </p>
+            </article>
+
+            <article class="release">
+              <div class="release-head">
+                <h2>0.0.1 — first working build</h2>
+                <span class="release-date">1 November 2026</span>
+              </div>
+              <ul>
+                <li>Shared core for routing, the one-reel lock, page cleanup and the four-item navigation, with unit tests.</li>
+                <li>Manifest V3 extension for Chrome, Edge, Brave and Arc, plus a Firefox build.</li>
+                <li>Expo app for iPhone with a native four-tab bar and a Lock screen for the switches.</li>
+                <li>An offline fixture that mimics Instagram's mobile layout, so blocking can be demonstrated without an account.</li>
+                <li>Blocking verified in a real browser against that fixture: feed, Explore and a stray reel redirect; a reel from a DM pins and loops.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="cta" style="margin-top: 28px">
+            <div>
+              <h2>Want the detail behind a change?</h2>
+              <p>
+                Every decision, including the ones that were reversed, is written down with its reason
+                rather than summarised after the fact.
+              </p>
+            </div>
+            <a class="button button-ghost" href="help.html">Read the install guide</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <div class="footer-grid">
+          <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span> Directly</a>
+          <div class="footer-links">
+            <a href="features.html">Features</a>
+            <a href="changelog.html">Changelog</a>
+            <a href="help.html">Help</a>
+            <a href="privacy.html">Privacy</a>
+          </div>
+        </div>
+        <p class="legal-note">
+          Directly is an independent project. It is not affiliated with, endorsed by, or sponsored by
+          Instagram or Meta. Instagram is a trademark of Meta Platforms, Inc. This site sets no cookies
+          and runs no analytics.
+        </p>
+      </div>
+    </footer>
+
+    <script src="main.js"></script>
+  </body>
+</html>

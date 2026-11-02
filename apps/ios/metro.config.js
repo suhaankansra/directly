@@ -18,10 +18,18 @@ const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
 config.watchFolders = [workspaceRoot];
+
+// pnpm keeps a nested store: real packages live under `.pnpm/<pkg>@<ver>/node_modules`
+// and merged copies sit in `.pnpm/node_modules`. Metro only looks where it is told,
+// so both have to be listed or transitive deps (expo-modules-core and friends) vanish.
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
+  path.resolve(projectRoot, 'node_modules/.pnpm/node_modules'),
   path.resolve(workspaceRoot, 'node_modules'),
 ];
-config.resolver.disableHierarchicalLookup = true;
+
+// Keep walking up from each package's own directory, which is how a dependency
+// imported by `expo/build/Expo.js` finds its sibling inside the store.
+config.resolver.disableHierarchicalLookup = false;
 
 module.exports = config;
