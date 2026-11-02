@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Only Inbox — settings</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <div class="mark" aria-hidden="true"></div>
+      <div>
+        <h1>Only Inbox</h1>
+        <p class="sub">Instagram, DMs only.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>What you keep</h2>
+        <label class="row">
+          <input type="checkbox" id="allowReelsFromDms" />
+          <span>
+            <strong>One reel or post from a DM</strong>
+            <em>Opens what a friend sent. Swiping to the next one is off.</em>
+          </span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="allowStories" />
+          <span>
+            <strong>Stories</strong>
+            <em>Off by default. A story session is an endless tap.</em>
+          </span>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>How it behaves</h2>
+        <label class="row">
+          <input type="checkbox" id="showBlockToast" />
+          <span>
+            <strong>Explain redirects</strong>
+            <em>Show “that’s not here” when something is blocked.</em>
+          </span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="navLabels" />
+          <span>
+            <strong>Labels under the tabs</strong>
+            <em>DMs, Activity, Profile, Lock.</em>
+          </span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="debug" />
+          <span>
+            <strong>Debug logging</strong>
+            <em>Local console only. Never leaves your machine.</em>
+          </span>
+        </label>
+      </section>
+
+      <section class="card">
+        <h2>Your account</h2>
+        <p class="note">
+          You are signed in to Instagram in this browser, and this extension never sees your
+          password, your cookies or your messages. It changes what Instagram shows you, nothing more.
+          To sign out, sign out of Instagram itself.
+        </p>
+        <a class="button" id="openDms" href="https://www.instagram.com/direct/inbox/" target="_blank" rel="noreferrer">
+          Open your DMs
+        </a>
+      </section>
+
+      <p class="version"><span id="version">v0.1.0</span> · <a href="privacy.html" target="_blank" rel="noreferrer">Privacy</a></p>
+    </main>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+/* Dark surfaces + our purple accent.
+ *
+ * Preference order: Instagram's own CSS custom properties (stable across
+ * redesigns), then attribute/value hooks, then nothing. We never fight a
+ * layout rule we do not have to win. */
+
+:root,
+html {
+  color-scheme: dark;
+  --oo-accent: #6c5ce7;
+  --oo-accent-soft: rgba(108, 92, 231, 0.18);
+  --oo-surface: #0f0f12;
+  --oo-surface-raised: #17171c;
+  --oo-border: rgba(255, 255, 255, 0.08);
+
+  /* Instagram's documented/observed theme tokens, where they exist. */
+  --ig-primary-button: 108, 92, 231;
+  --ig-primary-button-hover: 92, 78, 214;
+  --ig-link: 145, 130, 255;
+  --ig-badge: 108, 92, 231;
+  --ig-highlight-background: 23, 23, 28;
+  --ig-separator: 38, 38, 44;
+  --ig-secondary-background: 15, 15, 18;
+  --ig-primary-background: 15, 15, 18;
+  --ig-secondary-text: 168, 168, 178;
+  --ig-primary-text: 240, 240, 244;
+}
+
+html,
+body {
+  background-color: var(--oo-surface) !important;
+  color: var(--ig-primary-text);
+}
+
+/* Outgoing message bubbles: Instagram paints them blue. Recolour by value so
+ * it survives class-name churn. */
+[style*='rgb(0, 149, 246)'],
+[style*='rgb(0,149,246)'],
+[style*='#0095F6'],
+[style*='#0095f6'] {
+  background-color: var(--oo-accent) !important;
+  border-color: var(--oo-accent) !important;
+}
+
+/* Primary buttons (Follow / Follow Back / Send) and their text. */
+button[type='button'][style*='0095F6'],
+a[role='button'][style*='0095F6'],
+div[role='button'][style*='0095F6'] {
+  background-color: var(--oo-accent) !important;
+  color: #fff !important;
+}
+
+/* Links and active states. */
+a[role='link'],
+a[href]:not([data-oo-removed]) {
+  --ig-link: 145, 130, 255;
+}
+
+/* Our own additions. */
+[data-oo-removed] {
+  display: none !important;
+}

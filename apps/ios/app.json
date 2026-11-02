@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Only Inbox",
+    "slug": "only-inbox",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "onlyinbox",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f0f12"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.onlyinbox.app",
+      "requireFullScreen": false,
+      "infoPlist": {
+        "UIViewControllerBasedStatusBarAppearance": true
+      }
+    },
+    "android": {
+      "package": "com.onlyinbox.app",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": [],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

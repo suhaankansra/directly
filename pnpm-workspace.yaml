@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "apps/extension"
+  - "apps/web"
+
+# esbuild needs its native binary installed; nothing else is allowed to run
+# install scripts.
+allowBuilds:
+  esbuild: true

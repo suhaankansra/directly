@@ -1,0 +1,93 @@
+import { beforeEach, describe, expect, it } from 'vitest';
+import { runCleanup } from '../src/inpage/cleanup';
+import { SelectorResolver } from '../src/inpage/selector';
+import { DEFAULT_SETTINGS, type Settings } from '../src/settings';
+import type { Layout } from '../src/routes';
+
+let settings: Settings = DEFAULT_SETTINGS;
+
+function cleanup(layout: Layout = 'mobile'): void {
+  runCleanup({
+    win: window,
+    resolver: new SelectorResolver(layout),
+    getSettings: () => settings,
+    isLoggedIn: () => true,
+  });
+}
+
+function removed(selector: string): boolean {
+  const el = document.querySelector(selector);
+  return el?.getAttribute('data-oo-removed') !== null && el?.getAttribute('data-oo-removed') !== undefined;
+}
+
+beforeEach(() => {
+  settings = { ...DEFAULT_SETTINGS };
+  document.documentElement.removeAttribute('data-oo-cleaned');
+  document.body.innerHTML = `
+    <header><a href="/" id="logo"><img alt="Instagram"></a></header>
+    <main>
+      <section id="stories"><div role="list"><a href="/stories/alice/1/"><img alt=""></a></div></section>
+      <a href="/direct/t/1/" id="thread"><span>alice</span></a>
+      <a href="/p/Cpost/" id="dm-link">a post a friend sent</a>
+    </main>
+    <nav role="navigation" id="ignav">
+      <a href="/" id="nav-home"><svg aria-label="Home"></svg></a>
+      <a href="/explore/" id="nav-explore"><svg aria-label="Search"></svg></a>
+      <a href="/reels/" id="nav-reels"><svg aria-label="Reels"></svg></a>
+      <a href="/direct/inbox/" id="nav-dms"><svg aria-label="Messages"></svg></a>
+    </nav>
+    <div id="usebanner"><span>Use the app</span><button aria-label="Close">×</button></div>
+  `;
+});
+
+describe('runCleanup', () => {
+  it('marks the document as cleaned', () => {
+    cleanup();
+    expect(document.documentElement.getAttribute('data-oo-cleaned')).toBe('1');
+  });
+
+  it("hides Instagram's own navigation container", () => {
+    cleanup();
+    expect(document.getElementById('ignav')!.getAttribute('data-oo-removed')).toBe('ig-nav');
+  });
+
+  it('hides links that lead to blocked routes', () => {
+    cleanup();
+    expect(removed('#nav-home')).toBe(true);
+    expect(removed('#nav-explore')).toBe(true);
+    expect(removed('#nav-reels')).toBe(true);
+  });
+
+  it('leaves allowed links alone', () => {
+    cleanup();
+    expect(document.getElementById('thread')!.hasAttribute('data-oo-removed')).toBe(false);
+    expect(document.getElementById('nav-dms')!.hasAttribute('data-oo-removed')).toBe(false);
+  });
+
+  it('removes the "Use the app" banner', () => {
+    cleanup();
+    expect(removed('#usebanner')).toBe(true);
+  });
+
+  it('does not hide a post link inside a thread', () => {
+    cleanup();
+    expect(document.getElementById('dm-link')!.hasAttribute('data-oo-removed')).toBe(false);
+  });
+
+  it('hides the stories tray when stories are disabled', () => {
+    cleanup();
+    expect(document.querySelector('#stories > div')!.getAttribute('data-oo-removed')).toBe('stories');
+  });
+
+  it('keeps the stories tray when stories are enabled', () => {
+    settings = { ...DEFAULT_SETTINGS, allowStories: true };
+    cleanup();
+    expect(document.querySelector('#stories > div')!.hasAttribute('data-oo-removed')).toBe(false);
+  });
+
+  it('is idempotent', () => {
+    cleanup();
+    cleanup();
+    expect(document.getElementById('ignav')!.getAttribute('data-oo-removed')).toBe('ig-nav');
+  });
+});

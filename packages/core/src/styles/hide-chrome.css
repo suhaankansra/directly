@@ -1,0 +1,44 @@
+/* Hide the parts of Instagram that lead into blocked routes.
+ *
+ * These rules are deliberately *cosmetic*: if Instagram changes its markup they
+ * simply stop matching, which is the fail-open side of D017. The route guard is
+ * what actually keeps the feed unreachable.
+ *
+ * Hooks, in order of stability: href, aria-label, role. Never a class name. */
+
+/* Instagram's own navigation: the native tab bar (iOS) or our injected bar
+ * (web) is the only navigation now. */
+nav[role='navigation'],
+div[role='navigation'] {
+  display: none !important;
+}
+
+/* Entry points that would be dead ends once the guard is on. */
+a[href='/reels/'],
+a[href='/explore/'],
+a[href='/explore/search/'],
+a[href='/explore/tags/'],
+a[href='/create/select/'],
+a[href='https://www.threads.net/'],
+a[href='https://www.threads.com/'] {
+  display: none !important;
+}
+
+/* The "Use the app" / "Open in app" nag is removed by cleanup.ts (it needs a
+ * text match); this catches its close button container as a backstop. */
+div[role='banner']:has(a[href*='app.link']),
+div[role='dialog']:has(a[href*='app.link']) {
+  display: none !important;
+}
+
+/* App-store upsells inside the DM list. */
+div[role='button'][aria-label='Open in app'],
+div[role='button'][aria-label='Get the app'] {
+  display: none !important;
+}
+
+/* Reels/Explore pills inside search suggestions. */
+div[role='button'][aria-label='Reels'],
+div[role='button'][aria-label='Explore'] {
+  display: none !important;
+}

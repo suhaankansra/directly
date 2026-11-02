@@ -1,0 +1,32 @@
+/* Reel lock, CSS half.
+ *
+ * `display:none` (not `visibility`) so the sibling slides cannot receive scroll
+ * snapping, autoplay or a swipe. When the lock disarms, the attribute is removed
+ * and Instagram's own layout returns unchanged. */
+
+[data-oo-slide-hidden='true'] {
+  display: none !important;
+}
+
+html[data-oo-reel-locked] {
+  overscroll-behavior: none;
+  scroll-snap-type: none !important;
+}
+
+html[data-oo-reel-locked] body {
+  overscroll-behavior: none;
+}
+
+/* The scroller behind the reel must not gain extra scroll range. */
+html[data-oo-reel-locked] div[style*='scroll-snap-type'] {
+  scroll-snap-type: none !important;
+  overscroll-behavior: contain;
+}
+
+/* Desktop's "next/prev" chevrons and reel dots. */
+html[data-oo-reel-locked] button[aria-label='Next'],
+html[data-oo-reel-locked] button[aria-label='Previous'],
+html[data-oo-reel-locked] svg[aria-label='Next'],
+html[data-oo-reel-locked] svg[aria-label='Previous'] {
+  display: none !important;
+}

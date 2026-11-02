@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Only Inbox — help &amp; install</title>
+    <meta name="description" content="How to install Only Inbox on iPhone, in Chrome, in Firefox, and in Safari." />
+    <meta name="theme-color" content="#0a0a0d" />
+    <link rel="icon" href="assets/icon-192.png" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap nav">
+        <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true"></span> Only Inbox</a>
+        <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">Menu</button>
+        <nav class="nav-links" id="nav-links" aria-label="Main">
+          <a href="index.html">Home</a>
+          <a href="index.html#get">Get it</a>
+          <a href="privacy.html">Privacy</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="wrap">
+          <h1 style="font-size: clamp(1.8rem, 4.5vw, 2.6rem)">Help &amp; install</h1>
+          <p class="lede">
+            Nothing is on a store yet. Until then every surface can be installed by hand in a couple of
+            minutes, and each section below is the exact sequence.
+          </p>
+        </div>
+      </section>
+
+      <section id="chrome">
+        <div class="wrap">
+          <h2>Chrome, Edge, Brave, Arc</h2>
+          <p>Loads as an unpacked extension. It survives restarts; Chrome may ask once to confirm.</p>
+          <ol>
+            <li>Download or clone this project and run <code>pnpm install</code>, then <code>pnpm build</code>.</li>
+            <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>, <code>brave://extensions</code>).</li>
+            <li>Turn on <strong>Developer mode</strong>.</li>
+            <li>Choose <strong>Load unpacked</strong> and pick <code>apps/extension/dist/chrome</code>.</li>
+            <li>Open instagram.com — you should land in your DMs with a four-item bar.</li>
+          </ol>
+          <p class="small muted">
+            Permissions requested: <code>instagram.com</code> only, plus storage, tabs and webNavigation
+            so a blocked page can be redirected before it renders. No other site is touched.
+          </p>
+        </div>
+      </section>
+
+      <section id="firefox">
+        <div class="wrap">
+          <h2>Firefox (desktop)</h2>
+          <ol>
+            <li>Run <code>pnpm build</code>, then open <code>about:debugging#/runtime/this-firefox</code>.</li>
+            <li>Choose <strong>Load Temporary Add-on</strong> and select
+              <code>apps/extension/dist/firefox/manifest.json</code>.</li>
+            <li>Temporary add-ons are removed when Firefox quits; the signed build will be permanent.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="ios">
+        <div class="wrap">
+          <h2>iPhone</h2>
+          <ol>
+            <li>The app is in App Store review. Once it ships, installing it also installs the Safari extension.</li>
+            <li>In <strong>Settings → Safari → Extensions</strong>, turn on <strong>Only Inbox</strong>, then allow it for instagram.com.</li>
+            <li>Open Safari, go to instagram.com and sign in. You land in your DMs.</li>
+          </ol>
+          <p class="small muted">
+            Building it yourself: <code>cd apps/ios &amp;&amp; npm install &amp;&amp; npx expo run:ios</code>. A
+            development build is required — signing out and the Safari extension need native code that
+            Expo Go cannot provide.
+          </p>
+        </div>
+      </section>
+
+      <section id="safari">
+        <div class="wrap">
+          <h2>Safari on macOS</h2>
+          <ol>
+            <li>Build the Chrome target: <code>pnpm build:extension</code>.</li>
+            <li>Convert it: <code>xcrun safari-web-extension-converter apps/extension/dist/chrome</code>.</li>
+            <li>Open the generated Xcode project, run it once, then enable the extension in
+              <strong>Safari → Settings → Extensions</strong>.</li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="troubleshooting">
+        <div class="wrap">
+          <h2>If something looks wrong</h2>
+          <details>
+            <summary>The feed still appears for a moment</summary>
+            <p>
+              You are seeing Instagram's own first paint before the route guard redirects. Turn on
+              <em>Debug logging</em> in the extension popup to see which rule fired.
+            </p>
+          </details>
+          <details>
+            <summary>A nav item stopped working after an Instagram update</summary>
+            <p>
+              Hiding rules use <code>href</code>, <code>aria-label</code> and <code>role</code>, never
+              class names, but Instagram does change markup. Blocking still holds — only the cosmetic
+              hiding degrades. The selector list can be overridden with a JSON file, so this is fixable
+              without a new release.
+            </p>
+          </details>
+          <details>
+            <summary>I want to be signed out completely</summary>
+            <p>
+              In the app: <strong>Lock → Sign out</strong>. In a browser: sign out of Instagram itself,
+              or remove the extension's site data. Only Inbox never stores your session.
+            </p>
+          </details>
+          <details>
+            <summary>Does it work in Chrome on Android?</summary>
+            <p>
+              No. Chrome for Android does not support extensions. Safari on iOS and Firefox on Android
+              do; Android browsers are on the roadmap, not in this build.
+            </p>
+          </details>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="wrap">
+        <p class="legal-note">
+          Only Inbox is an independent project, not affiliated with Instagram or Meta. This site sets no
+          cookies and runs no analytics.
+        </p>
+      </div>
+    </footer>
+
+    <script src="main.js"></script>
+  </body>
+</html>

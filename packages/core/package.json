@@ -1,0 +1,30 @@
+{
+  "name": "@only-inbox/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/native.cjs",
+  "react-native": "./dist/native.cjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-native": "./dist/native.cjs",
+      "default": "./dist/native.cjs"
+    },
+    "./inpage": "./src/inpage/index.ts",
+    "./styles.css": "./dist/styles.css",
+    "./selectors/mobile.json": "./src/selectors/mobile.json",
+    "./selectors/desktop.json": "./src/selectors/desktop.json"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "jsdom": "^26.0.0",
+    "vitest": "^3.2.4"
+  }
+}

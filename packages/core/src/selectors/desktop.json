@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "layout": "desktop",
+  "comment": "Candidate selectors for the desktop web layout (left sidebar, two-pane DMs, reel modal). Most stable first; no obfuscated class names.",
+  "selectors": {
+    "sidebar": ["nav[role='navigation']", "div[role='navigation']", "nav"],
+    "navHome": ["a[href='/']", "a[href='https://www.instagram.com/']"],
+    "navExplore": ["a[href='/explore/']", "a[href='/explore/search/']"],
+    "navReels": ["a[href='/reels/']"],
+    "navCreate": ["a[href='/create/select/']", "svg[aria-label='New post']"],
+    "navSearch": ["a[href='/explore/search/']", "a[aria-label='Search']"],
+    "navThreads": ["a[href='https://www.threads.net/']", "a[href='https://www.threads.com/']"],
+    "storiesRail": ["div[role='list']", "ul[role='list']"],
+    "reelModal": ["div[role='dialog']"],
+    "reelScroller": ["div[role='dialog'] div[style*='scroll-snap-type']", "div[role='dialog']"],
+    "reelSlide": ["div[role='dialog'] article", "article"],
+    "reelNext": ["button[aria-label='Next']", "svg[aria-label='Next']"],
+    "reelPrev": ["button[aria-label='Previous']", "svg[aria-label='Previous']"],
+    "postNext": ["button[aria-label='Next']", "svg[aria-label='Next']"],
+    "upNextCard": ["a[href*='/reel/']", "a[href*='/p/']"],
+    "appBanner": ["div[role='banner']"],
+    "accountChevron": ["svg[aria-label='Down chevron icon']"]
+  }
+}

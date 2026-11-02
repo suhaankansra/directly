@@ -1,0 +1,25 @@
+node_modules/
+.pnpm-store/
+
+# Build output
+packages/core/dist/
+apps/extension/dist/
+apps/web/dist/
+
+# Expo / native
+apps/ios/.expo/
+apps/ios/ios/
+apps/ios/android/
+apps/ios/dist/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Local
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
