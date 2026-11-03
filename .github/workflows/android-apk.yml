@@ -40,7 +40,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: gradle
 
       # apps/ios is not a pnpm workspace member, so it keeps its own lockfile and
       # gets its own install below.
@@ -69,6 +68,19 @@ jobs:
         run: |
           yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
           "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.1.12297006" "cmake;3.22.1"
+
+      # `cache: gradle` on setup-java cannot work here: it hashes committed Gradle
+      # files, and every one of them lives in the gitignored android/ directory
+      # that the step above only just generated.
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('apps/ios/pnpm-lock.yaml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
 
       # All four ABIs, because the artifact is meant to be sideloaded onto any
       # phone. Drop to -PreactNativeArchitectures=arm64-v8a for a faster job that
