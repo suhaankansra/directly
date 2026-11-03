@@ -1,0 +1,204 @@
+name: Release
+
+# Tag `v1.2.3` publishes a versioned release; running it by hand publishes a
+# rolling `latest` prerelease, so there is always something downloadable
+# without inventing a tag.
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Android APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the shared core
+        run: pnpm build:core
+
+      - name: Install app dependencies
+        working-directory: apps/ios
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate the injected script and native project
+        working-directory: apps/ios
+        run: |
+          pnpm prebuild
+          npx expo prebuild --platform android --no-install
+
+      - name: Install Android NDK and CMake
+        run: |
+          yes | "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
+          "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.1.12297006" "cmake;3.22.1"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('apps/ios/pnpm-lock.yaml') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build the release APK
+        working-directory: apps/ios/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Collect the APK
+        run: |
+          mkdir -p dist
+          cp apps/ios/android/app/build/outputs/apk/release/*.apk "dist/directly-${{ github.ref_name }}.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: dist/*.apk
+          if-no-files-found: error
+
+  ios:
+    name: iOS IPA
+    # An .ipa can only be produced by Xcode, which means a macOS runner.
+    runs-on: macos-latest
+    timeout-minutes: 75
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build the shared core
+        run: pnpm build:core
+
+      - name: Install app dependencies
+        working-directory: apps/ios
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate the injected script and native project
+        working-directory: apps/ios
+        run: |
+          pnpm prebuild
+          npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods dependencies
+        working-directory: apps/ios/ios
+        run: pod install
+
+      # No signing identity exists in CI, so the archive is built unsigned. That
+      # produces a real device binary; installing it needs re-signing with the
+      # user's own certificate (AltStore, Sideloadly, or Xcode).
+      - name: Archive for a device
+        working-directory: apps/ios/ios
+        run: |
+          WORKSPACE=$(ls -d *.xcworkspace | head -1)
+          SCHEME=$(basename "${WORKSPACE}" .xcworkspace)
+          echo "workspace=${WORKSPACE} scheme=${SCHEME}"
+          xcodebuild \
+            -workspace "${WORKSPACE}" \
+            -scheme "${SCHEME}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            -archivePath build/Directly.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive
+
+      - name: Package the IPA
+        working-directory: apps/ios/ios
+        run: |
+          APP=$(ls -d build/Directly.xcarchive/Products/Applications/*.app | head -1)
+          echo "packaging ${APP}"
+          rm -rf out && mkdir -p out/Payload
+          cp -R "${APP}" out/Payload/
+          cd out && zip -qry "Directly-unsigned.ipa" Payload
+          mkdir -p ../../../../dist
+          mv "Directly-unsigned.ipa" "../../../../dist/directly-${{ github.ref_name }}-unsigned.ipa"
+          ls -lh ../../../../dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipa
+          path: dist/*.ipa
+          if-no-files-found: error
+
+  publish:
+    name: Publish the release
+    needs: [android, ios]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create the release and attach both files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ls -lh dist
+
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            TAG="latest"
+            TITLE="Latest build"
+            NOTES="Built from ${GITHUB_SHA} on $(date -u +%Y-%m-%d). The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install."
+            PRE="--prerelease"
+          else
+            TAG="${GITHUB_REF_NAME}"
+            TITLE="Directly ${TAG}"
+            NOTES="Built from ${GITHUB_SHA}. The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install."
+            PRE=""
+          fi
+
+          gh release view "${TAG}" > /dev/null 2>&1 || \
+            gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${TITLE}" --notes "${NOTES}" ${PRE}
+
+          gh release upload "${TAG}" dist/*.apk dist/*.ipa --clobber
+
+          echo "### Release ${TAG}" >> "${GITHUB_STEP_SUMMARY}"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "${GITHUB_STEP_SUMMARY}"
