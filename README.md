@@ -44,6 +44,29 @@ For a first run, `npx expo prebuild --platform android --clean` generates
 (`sdk.dir=/Users/you/Library/Android/sdk`). The generated `android/` and `ios/`
 folders are gitignored — they are build output, not source.
 
+#### Release builds
+
+A release build compiles the JS bundle into the APK (`assets/index.android.bundle`, Hermes
+bytecode), so the app starts on the device with no Metro and no `adb reverse`:
+
+```bash
+cd apps/ios/android
+
+./gradlew assembleRelease                                        # all four ABIs — sideload anywhere
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a   # arm64 only — emulator, modern phones
+```
+
+The output is `app/build/outputs/apk/release/app-release.apk`; `adb install -r` it and it keeps
+working after every Metro process is gone. The ABI list comes from `reactNativeArchitectures` in
+`android/gradle.properties`, and overriding it on the command line is the whole difference: the
+arm64-only build compiles one set of native libraries instead of four, so it pays back on every
+clean build and produces a 23 MB APK rather than a 75 MB one. Build universal when you want one
+file for any device; build arm64-only while iterating.
+
+Signing uses the debug keystore the Expo template wires into `signingConfigs.debug`. That is fine
+for sideloading on your own devices, but it is not a Play Store key — replace it with your own
+keystore before publishing.
+
 ### Try the browser surfaces without an account
 
 ```bash
@@ -116,8 +139,9 @@ video looped. Blocking fails closed; cosmetic hiding fails open.
 
 Built, unit-tested and exercised in a browser against a fixture: the blocking layer, the reel lock,
 the cleanup, the injected nav, the settings, the extension builds, and the website at 375px and
-1440px. Typechecked but **not run**: the iOS app — there is no simulator or device in this
-environment. Not verified at all: anything that needs a logged-in Instagram session (see
+1440px. Both mobile builds have also been run: the iOS app in an iPhone simulator, and the Android
+app on an emulator in both debug and release form. Not verified at all: anything that needs a
+logged-in Instagram session (see
 `09-test-plan.md` §5), and the single biggest unknown, whether Instagram permits login inside a
 WKWebView (risk R1).
 
