@@ -43,8 +43,11 @@ export function createToast(win: Window): Toast {
   let lastMessage = '';
   let lastAt = 0;
 
-  function ensure(): HTMLElement {
+  function ensure(): HTMLElement | null {
     if (pill) return pill;
+    // Android can block a navigation before `<html>` exists; there is nothing to
+    // attach to yet, and the redirect itself is the important part.
+    if (!doc.documentElement) return null;
     host = doc.createElement('div');
     host.id = 'directly-toast';
     const shadow = host.attachShadow({ mode: 'open' });
@@ -62,6 +65,7 @@ export function createToast(win: Window): Toast {
   return {
     show: (message: string) => {
       const element = ensure();
+      if (!element) return;
       const now = Date.now();
       // Collapse a burst of identical redirects into one pill.
       if (message === lastMessage && now - lastAt < 1500) return;

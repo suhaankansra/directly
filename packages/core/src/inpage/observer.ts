@@ -71,7 +71,9 @@ export function createObserver(deps: ObserverDeps): Observer {
       }
     });
     observer = created;
-    created.observe(doc.documentElement, {
+    // Observe the document itself, not `documentElement`: Android runs this at
+    // document_start, before `<html>` exists, and `observe(null)` throws.
+    created.observe(doc, {
       childList: true,
       subtree: true,
       characterData: false,
