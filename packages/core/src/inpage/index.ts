@@ -224,6 +224,7 @@ export function boot(options: BootOptions = {}): Booted {
   }
 
   let lastAccount: string | null | undefined;
+  let lastSignedIn: boolean | undefined;
 
   /**
    * The signed-in username, read from a profile link that Instagram already
@@ -246,9 +247,15 @@ export function boot(options: BootOptions = {}): Booted {
 
   function publishAccount(): void {
     const username = detectAccount();
-    if (username === lastAccount) return;
+    // Reported separately from the name: the name is often unknowable (it needs
+    // a profile link on the current page), but whether a session exists is not.
+    // Without this the host cannot tell "signed in, name unknown" from "logged
+    // out", and the Lock tab claimed a session it did not have.
+    const signedIn = isLoggedIn();
+    if (username === lastAccount && signedIn === lastSignedIn) return;
     lastAccount = username;
-    post({ v: 1, type: 'di:account', username });
+    lastSignedIn = signedIn;
+    post({ v: 1, type: 'di:account', username, signedIn });
   }
 
   function publishUrl(): void {
@@ -274,6 +281,9 @@ export function boot(options: BootOptions = {}): Booted {
     onNavigate: () => {
       handleRouteChange();
     },
+    // Honour the host's navigate override: without this, a blocked navigation
+    // fell through to `location.replace` and the option was silently ignored.
+    navigate,
     onBlocked: (verdict) => {
       if (settings.debug) {
         // eslint-disable-next-line no-console

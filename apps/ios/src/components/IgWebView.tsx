@@ -29,7 +29,7 @@ type Props = {
   settings: Settings;
   onRoute: (path: string, layout: Layout, pinId: string | null, tab: TabId | null) => void;
   onBlocked: (reason: string, path: string) => void;
-  onAccount: (username: string | null) => void;
+  onAccount: (username: string | null, signedIn: boolean) => void;
   onLoadingChange: (loading: boolean) => void;
   /** Changing the nonce navigates to `path`. */
   navigateTarget: { path: string; nonce: number } | null;
@@ -154,7 +154,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
           break;
         }
         case 'di:account': {
-          onAccount(message.username);
+          onAccount(message.username, message.signedIn);
           break;
         }
         default:

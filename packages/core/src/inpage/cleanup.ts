@@ -59,8 +59,31 @@ export function runCleanup(deps: CleanupDeps): void {
   // 1. Hide Instagram's own navigation: our four tabs (native bar on iOS, our
   //    injected bar in the extension) are the only navigation now.
   const navSelectors = resolver.currentLayout === 'desktop' ? ['sidebar'] : ['bottomNav'];
+  const navContext: RouteContext = { settings, loggedIn: deps.isLoggedIn(), pinId: null };
   for (const key of navSelectors) {
     for (const el of resolver.all(doc, key)) {
+      // Hardening, first line of defence: never hide a container holding the
+      // message surface. A navigation element that wraps a thread list or a
+      // composer is not chrome, whatever it links to — taking it out would blank
+      // the inbox or the reply box, the one failure this app must not have.
+      const holdsMessageUi =
+        el.querySelector("a[href*='/direct/t/']") !== null ||
+        el.querySelector("textarea, input, [contenteditable='true'], [role='textbox']") !== null;
+      if (holdsMessageUi) continue;
+
+      // Second line: only hide a navigation container that actually carries
+      // routes we block. Some builds wrap the DM inbox in a <nav>, and hiding
+      // every match would blank the only screen this app exists for.
+      const hasBlockedLink = Array.from(el.querySelectorAll('a[href]')).some((anchor) => {
+        const href = anchor.getAttribute('href');
+        if (!href) return false;
+        try {
+          return routeVerdict(new URL(href, win.location.href).href, navContext).action === 'block';
+        } catch {
+          return false;
+        }
+      });
+      if (!hasBlockedLink) continue;
       markRemoved(el, 'ig-nav', deps);
     }
   }

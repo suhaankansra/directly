@@ -71,17 +71,28 @@ describe('parsePageMessage', () => {
   });
 
   it('accepts a username for the Lock tab and rejects anything that is not one', () => {
-    expect(parsePageMessage({ v: 1, type: 'di:account', username: 'alice.b' })).toEqual({
+    expect(
+      parsePageMessage({ v: 1, type: 'di:account', username: 'alice.b', signedIn: true }),
+    ).toEqual({
       v: 1,
       type: 'di:account',
       username: 'alice.b',
+      signedIn: true,
     });
-    expect(parsePageMessage({ v: 1, type: 'di:account', username: null })).toEqual({
+    expect(
+      parsePageMessage({ v: 1, type: 'di:account', username: null, signedIn: false }),
+    ).toEqual({
       v: 1,
       type: 'di:account',
       username: null,
+      signedIn: false,
     });
-    expect(parsePageMessage({ v: 1, type: 'di:account', username: '<img onerror=1>' })).toBeNull();
+    expect(
+      parsePageMessage({ v: 1, type: 'di:account', username: '<img onerror=1>', signedIn: true }),
+    ).toBeNull();
+    // Session state is required: without it the host would have to guess, which
+    // is how the Lock tab ended up claiming a session that did not exist.
+    expect(parsePageMessage({ v: 1, type: 'di:account', username: 'alice.b' })).toBeNull();
   });
 });
 

@@ -7,9 +7,22 @@
  * Hooks, in order of stability: href, aria-label, role. Never a class name. */
 
 /* Instagram's own navigation: the native tab bar (iOS) or our injected bar
- * (web) is the only navigation now. */
-nav[role='navigation'],
-div[role='navigation'] {
+ * (web) is the only navigation now.
+ *
+ * Scoped to containers that actually link to routes we block. The DM inbox can
+ * be wrapped in a navigation element too, and hiding that would leave the only
+ * screen this app exists for (D017: cosmetics fail open). `:has()` is available
+ * in every WebView that can run this app (Chromium 105+ / iOS 15.4+). */
+:is(nav, div)[role='navigation']:is(
+  :has(a[href='/']),
+  :has(a[href='/explore/']),
+  :has(a[href='/reels/'])
+):not(
+  :has(a[href*='/direct/t/']),
+  :has(textarea),
+  :has(input),
+  :has([contenteditable='true'])
+) {
   display: none !important;
 }
 

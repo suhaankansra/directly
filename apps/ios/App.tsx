@@ -29,6 +29,7 @@ function Shell() {
   const [tab, setTab] = useState<TabId | null>('inbox');
   const [path, setPath] = useState<string>(INBOX_PATH);
   const [username, setUsername] = useState<string | null>(null);
+  const [signedIn, setSignedIn] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [target, setTarget] = useState<{ path: string; nonce: number } | null>(null);
@@ -68,6 +69,11 @@ function Shell() {
     if (nextTab) setTab(nextTab);
     else if (lockOpen) setTab('lock');
   }, [lockOpen]);
+
+  const onAccount = useCallback((name: string | null, isSignedIn: boolean) => {
+    setUsername(name);
+    setSignedIn(isSignedIn);
+  }, []);
 
   const updateSettings = useCallback((next: Settings) => {
     setSettings(next);
@@ -139,7 +145,7 @@ function Shell() {
             settings={settings}
             onRoute={onRoute}
             onBlocked={onBlocked}
-            onAccount={setUsername}
+            onAccount={onAccount}
             onLoadingChange={() => undefined}
             navigateTarget={target}
           />
@@ -150,6 +156,7 @@ function Shell() {
             <LockScreen
               settings={settings}
               username={username}
+              signedIn={signedIn}
               onChange={updateSettings}
               onOpenProfile={() => {
                 setLockOpen(false);
@@ -209,13 +216,19 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     right: spacing.lg,
     bottom: spacing.lg,
-    backgroundColor: '#232329',
-    borderColor: colors.border,
+    // Glass: translucent fill, a bright specular rim and a soft cast shadow.
+    backgroundColor: 'rgba(35,35,41,0.82)',
+    borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.pill,
     paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.42,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 10,
   },
   toastText: { color: colors.text, fontSize: 13, fontWeight: '500' },
 });

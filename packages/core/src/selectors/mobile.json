@@ -3,7 +3,7 @@
   "layout": "mobile",
   "comment": "Candidate selectors, most stable first. Never obfuscated class names. Overridable at runtime as pure data (D018).",
   "selectors": {
-    "bottomNav": ["nav[role='navigation']", "div[role='navigation']", "nav"],
+    "bottomNav": ["nav[role='navigation']", "div[role='navigation']"],
     "navHome": ["a[href='/']", "a[href='https://www.instagram.com/']"],
     "navExplore": ["a[href='/explore/']", "a[href='/explore/search/']"],
     "navReels": ["a[href='/reels/']"],

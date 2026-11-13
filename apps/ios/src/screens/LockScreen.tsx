@@ -7,6 +7,8 @@ import { colors, radius, spacing } from '../theme';
 type Props = {
   settings: Settings;
   username: string | null;
+  /** Whether a session exists in the web view — not the same as knowing the name. */
+  signedIn: boolean;
   onChange: (next: Settings) => void;
   onOpenProfile: () => void;
   onSignOut: () => void;
@@ -42,7 +44,7 @@ const ROWS: Row[] = [
   },
 ];
 
-export function LockScreen({ settings, username, onChange, onOpenProfile, onSignOut, version }: Props) {
+export function LockScreen({ settings, username, signedIn, onChange, onOpenProfile, onSignOut, version }: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Lock</Text>
@@ -50,27 +52,32 @@ export function LockScreen({ settings, username, onChange, onOpenProfile, onSign
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
-        <Text style={styles.account}>{username ? `@${username}` : 'Signed in'}</Text>
-        <Text style={styles.note}>
-          You are signed in inside this app’s own web view. Directly never sees your password, your
-          cookies or your messages.
+        <Text style={styles.account}>
+          {username ? `@${username}` : signedIn ? 'Signed in' : 'Not signed in'}
         </Text>
-        <View style={styles.buttons}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onOpenProfile}
-            style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-          >
-            <Text style={styles.buttonText}>View profile</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onSignOut}
-            style={({ pressed }) => [styles.button, styles.buttonGhost, pressed && styles.pressed]}
-          >
-            <Text style={[styles.buttonText, styles.buttonGhostText]}>Sign out</Text>
-          </Pressable>
-        </View>
+        <Text style={styles.note}>
+          {signedIn
+            ? 'You are signed in inside this app’s own web view. Directly never sees your password, your cookies or your messages.'
+            : 'Sign in on the DMs tab. The session lives in this app’s own web view — Directly never sees your password, your cookies or your messages.'}
+        </Text>
+        {signedIn ? (
+          <View style={styles.buttons}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onOpenProfile}
+              style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+            >
+              <Text style={styles.buttonText}>View profile</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onSignOut}
+              style={({ pressed }) => [styles.button, styles.buttonGhost, pressed && styles.pressed]}
+            >
+              <Text style={[styles.buttonText, styles.buttonGhostText]}>Sign out</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
 
       <View style={styles.card}>
@@ -110,14 +117,20 @@ export function LockScreen({ settings, username, onChange, onOpenProfile, onSign
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   content: { padding: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.md },
-  title: { color: colors.text, fontSize: 26, fontWeight: '700', letterSpacing: -0.4 },
+  title: { color: colors.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: -spacing.sm },
   card: {
-    backgroundColor: colors.surfaceRaised,
+    // Glass surface: translucent fill, bright rim, soft cast shadow.
+    backgroundColor: 'rgba(23,23,28,0.72)',
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.border,
+    borderColor: 'rgba(255,255,255,0.14)',
     padding: spacing.md,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   cardTitle: {
     color: colors.muted,

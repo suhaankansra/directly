@@ -20,7 +20,7 @@ export type PageMessage =
   | { v: 1; type: 'di:blocked'; path: string; reason: string }
   | { v: 1; type: 'di:live'; layout: Layout }
   | { v: 1; type: 'di:tab'; tab: TabId | null }
-  | { v: 1; type: 'di:account'; username: string | null };
+  | { v: 1; type: 'di:account'; username: string | null; signedIn: boolean };
 
 export type HostMessage =
   | { v: 1; type: 'di:settings'; settings: Settings }
@@ -90,11 +90,14 @@ export function parsePageMessage(input: unknown): PageMessage | null {
     }
     case 'di:account': {
       // Only the *name* of the signed-in account, read from a profile link in the
-      // page. It is displayed in the Lock tab and never stored or transmitted.
+      // page, plus whether a session is present at all. It is displayed in the
+      // Lock tab and never stored or transmitted.
       const username = value['username'];
-      if (username === null) return { v: 1, type: 'di:account', username: null };
+      const signedIn = value['signedIn'];
+      if (typeof signedIn !== 'boolean') return null;
+      if (username === null) return { v: 1, type: 'di:account', username: null, signedIn };
       if (typeof username !== 'string' || !/^[A-Za-z0-9._]{1,30}$/.test(username)) return null;
-      return { v: 1, type: 'di:account', username };
+      return { v: 1, type: 'di:account', username, signedIn };
     }
     default:
       return null;

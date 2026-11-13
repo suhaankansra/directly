@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import type { TabId } from '@directly/core';
 
+import { Glass } from './Glass';
 import { colors, radius, spacing } from '../theme';
 
 type Props = {
@@ -62,6 +63,7 @@ function Icon({ tab, active }: { tab: TabId; active: boolean }) {
 export function TabBar({ active, onSelect, bottomInset }: Props) {
   return (
     <View style={[styles.bar, { paddingBottom: Math.max(bottomInset, spacing.sm) }]}>
+      <Glass style={StyleSheet.absoluteFill} intensity={80} cornerRadius={0} />
       {ORDER.map((tab) => {
         const isActive = active === tab;
         return (
@@ -85,9 +87,9 @@ export function TabBar({ active, onSelect, bottomInset }: Props) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    backgroundColor: '#111114',
+    // No opaque fill: the Glass layer behind the row supplies background and rim.
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: 'rgba(255,255,255,0.12)',
     paddingTop: spacing.sm,
   },
   item: {
@@ -100,7 +102,14 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   itemActive: {
-    backgroundColor: colors.accentSoft,
+    backgroundColor: 'rgba(108,92,231,0.22)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(168,158,255,0.55)',
+    shadowColor: colors.accent,
+    shadowOpacity: 0.5,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
   },
   pressed: {
     opacity: 0.7,

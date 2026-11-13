@@ -3,7 +3,7 @@
   "layout": "desktop",
   "comment": "Candidate selectors for the desktop web layout (left sidebar, two-pane DMs, reel modal). Most stable first; no obfuscated class names.",
   "selectors": {
-    "sidebar": ["nav[role='navigation']", "div[role='navigation']", "nav"],
+    "sidebar": ["nav[role='navigation']", "div[role='navigation']"],
     "navHome": ["a[href='/']", "a[href='https://www.instagram.com/']"],
     "navExplore": ["a[href='/explore/']", "a[href='/explore/search/']"],
     "navReels": ["a[href='/reels/']"],
