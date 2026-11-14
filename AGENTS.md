@@ -4,6 +4,15 @@ Directly — a DM-only Instagram client. One set of route rules and one injected
 in-page script are shared by a React Native app (iOS + Android) and a browser
 extension. Keep the logic in `packages/core`; the apps are thin hosts.
 
+## Which checkout this is
+
+**`/Users/sk/directly` is the canonical working copy on this machine.** Work here.
+
+The Desktop thread folder under
+`~/.config/freebuff-desktop/local-projects/…/threads/…` holds an older copy of
+the same repository. Do not edit it: commits made there do not exist here until
+they are pushed and pulled, so the two trees drift silently.
+
 ## Layout
 
 - `packages/core/src/routes.ts` — allow/block verdicts. Pure functions, no DOM.
