@@ -143,6 +143,30 @@ describe('DM inbox on a phone-width page', () => {
   });
 });
 
+describe('a reel sent in a thread', () => {
+  it('stays tappable, and tapping it pins that reel', () => {
+    // End-to-end for the regression in cleanup.ts: boot → cleanup must leave the
+    // friend's reel link visible → the click must arm the pin → the route is
+    // allowed. Each link in that chain was true on its own while the chain was
+    // broken at the first step.
+    document.body.innerHTML = `
+      <main>
+        <a href="/direct/t/42/" id="thread-back">bob</a>
+        <article id="msg">
+          <a href="/reel/Csent/" id="sent-reel"><video></video></a>
+        </article>
+      </main>`;
+    start('/direct/t/42/');
+    const link = document.getElementById('sent-reel')!;
+    expect(link.hasAttribute('data-di-removed')).toBe(false);
+
+    link.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+
+    expect(api?.pin()).toBe('Csent');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
 describe('signed-out page', () => {
   it('reports no session instead of assuming one', () => {
     document.body.innerHTML = '<input name="username" /><button>Log in</button>';

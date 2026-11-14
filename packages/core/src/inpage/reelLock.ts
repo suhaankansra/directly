@@ -55,6 +55,34 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
   let touchStartX = 0;
   let touchStartY = 0;
 
+  /** The reel we are locking, and its scroller, resolved on every tick. */
+  let activeSurface: Element | null = null;
+  let scroller: Element | null = null;
+
+  /**
+   * Videos we set `loop` on, with the value Instagram had before. Restoring is
+   * not cosmetic politeness: leaving `loop = true` behind means the player we
+   * touched never fires `ended` again, on any later page that shows it.
+   */
+  const looped = new Map<HTMLVideoElement, boolean>();
+
+  function applyLoop(video: HTMLVideoElement): void {
+    if (!looped.has(video)) looped.set(video, video.loop);
+    if (!video.loop) video.loop = true;
+  }
+
+  function restoreLoop(video: HTMLVideoElement): void {
+    const original = looped.get(video);
+    if (original === undefined) return;
+    video.loop = original;
+    looped.delete(video);
+  }
+
+  function restoreAllLoops(): void {
+    for (const [video, original] of looped) video.loop = original;
+    looped.clear();
+  }
+
   function allSlides(): HTMLElement[] {
     const articles = Array.from(doc.querySelectorAll('article')).filter(
       (el) => el.querySelector('video') !== null,
@@ -91,11 +119,33 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
     return best ?? list[0] ?? null;
   }
 
+  /**
+   * The reel's scroll container, if one of the candidates wraps the active
+   * slide. Resolved through the candidate list directly rather than
+   * `resolver.all` so a miss does not fill the selector-failure ring buffer on
+   * every mutation batch.
+   */
+  function findScroller(active: HTMLElement | null): Element | null {
+    if (!active) return null;
+    for (const selector of resolver.candidates('reelScroller')) {
+      try {
+        const found = Array.from(doc.querySelectorAll(selector)).find((el) => el.contains(active));
+        if (found) return found;
+      } catch {
+        /* invalid selector from a remote config: skip */
+      }
+    }
+    return null;
+  }
+
   function tick(): void {
     if (disposed) return;
     const root = doc.documentElement;
     if (!pin) {
       root.removeAttribute(LOCK_ATTR);
+      activeSurface = null;
+      scroller = null;
+      restoreAllLoops();
       for (const el of allSlides()) {
         el.removeAttribute(ACTIVE_ATTR);
         el.removeAttribute(HIDDEN_ATTR);
@@ -105,8 +155,14 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
 
     root.setAttribute(LOCK_ATTR, pin);
     const slides = allSlides();
-    if (slides.length === 0) return;
+    if (slides.length === 0) {
+      activeSurface = null;
+      scroller = null;
+      return;
+    }
     const active = pickActive(slides);
+    activeSurface = active;
+    scroller = findScroller(active);
 
     for (const el of slides) {
       if (el === active) {
@@ -114,12 +170,11 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
         el.removeAttribute(HIDDEN_ATTR);
         // Loop instead of advancing: Instagram's "next" is normally triggered
         // by the `ended` event, so looping removes the trigger entirely.
-        for (const video of Array.from(el.querySelectorAll('video'))) {
-          if (!video.loop) video.loop = true;
-        }
+        for (const video of Array.from(el.querySelectorAll('video'))) applyLoop(video);
       } else {
         el.removeAttribute(ACTIVE_ATTR);
         el.setAttribute(HIDDEN_ATTR, 'true');
+        for (const video of Array.from(el.querySelectorAll('video'))) restoreLoop(video);
       }
     }
 
@@ -129,6 +184,26 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
         (el as HTMLElement).setAttribute(HIDDEN_ATTR, 'true');
       }
     }
+  }
+
+  /**
+   * Did this gesture start on the reel we locked?
+   *
+   * The listeners are on the document because the reel can be re-rendered at
+   * any moment, but cancelling *every* vertical gesture also froze the comment
+   * sheet, the caption and whatever the thread behind the modal was scrolling.
+   * So we cancel inside the locked slide (and its scroller) and leave the rest
+   * of the page alone. If the selectors fail and no surface is resolved we fall
+   * back to the old, wider net — the gesture layer may never become a bypass.
+   */
+  function insideLock(target: EventTarget | null): boolean {
+    if (!activeSurface) return true;
+    const node = target as Node | null;
+    if (!node || typeof (node as Element).nodeType !== 'number') return false;
+    const el = (node as Element).nodeType === 1 ? (node as Element) : node.parentElement;
+    if (!el) return false;
+    if (activeSurface.contains(el)) return true;
+    return scroller !== null && scroller.contains(el);
   }
 
   function onTouchStart(event: TouchEvent): void {
@@ -141,6 +216,7 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
 
   function onTouchMove(event: TouchEvent): void {
     if (!pin) return;
+    if (!insideLock(event.target)) return;
     const touch = event.touches[0];
     if (!touch) return;
     const dy = touch.clientY - touchStartY;
@@ -154,6 +230,7 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
 
   function onWheel(event: WheelEvent): void {
     if (!pin) return;
+    if (!insideLock(event.target)) return;
     if (isEditable(event.target as Element | null)) return;
     const target = event.target as Element | null;
     if (target && target.closest('textarea, input, [contenteditable="true"]')) return;
@@ -215,6 +292,9 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
       doc.removeEventListener('touchmove', onTouchMove, touchOptions);
       doc.removeEventListener('wheel', onWheel, wheelOptions);
       doc.removeEventListener('keydown', onKeyDown, true);
+      activeSurface = null;
+      scroller = null;
+      restoreAllLoops();
       doc.documentElement.removeAttribute(LOCK_ATTR);
     },
   };

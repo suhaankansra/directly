@@ -67,6 +67,24 @@ describe('arm / disarm', () => {
     expect(extra.getAttribute('data-di-slide-hidden')).toBe('true');
   });
 
+  it('restores the video loop flag it changed, on disarm', () => {
+    // Leaving `loop = true` behind silenced Instagram's own `ended` handling on
+    // any later page that reused the element.
+    lock.arm('Cabc');
+    const video = slides()[0]!.querySelector('video')!;
+    expect(video.loop).toBe(true);
+    lock.disarm();
+    expect(video.loop).toBe(false);
+  });
+
+  it('leaves an already-looping video looping after disarm', () => {
+    const video = slides()[0]!.querySelector('video')!;
+    video.loop = true;
+    lock.arm('Cabc');
+    lock.disarm();
+    expect(video.loop).toBe(true);
+  });
+
   it('restores every slide on disarm', () => {
     lock.arm('Cabc');
     lock.disarm();
@@ -80,43 +98,74 @@ describe('arm / disarm', () => {
 });
 
 describe('gestures', () => {
-  it('cancels a vertical swipe while pinned', () => {
+  function swipe(
+    from: number,
+    to: number,
+    target: Element = slides()[0]!,
+  ): Event {
+    target.dispatchEvent(touch('touchstart', 20, from));
+    const move = touch('touchmove', 22, to);
+    target.dispatchEvent(move);
+    return move;
+  }
+
+  it('cancels a vertical swipe started on the pinned reel', () => {
     lock.arm('Cabc');
-    document.body.dispatchEvent(touch('touchstart', 20, 300));
-    const move = touch('touchmove', 22, 180);
-    document.body.dispatchEvent(move);
-    expect(move.defaultPrevented).toBe(true);
+    expect(swipe(300, 180).defaultPrevented).toBe(true);
   });
 
   it('lets a horizontal swipe through so carousels still work', () => {
     lock.arm('Cabc');
-    document.body.dispatchEvent(touch('touchstart', 300, 300));
+    const slide = slides()[0]!;
+    slide.dispatchEvent(touch('touchstart', 300, 300));
     const move = touch('touchmove', 120, 305);
-    document.body.dispatchEvent(move);
+    slide.dispatchEvent(move);
     expect(move.defaultPrevented).toBe(false);
   });
 
   it('does not interfere when nothing is pinned', () => {
-    document.body.dispatchEvent(touch('touchstart', 20, 300));
-    const move = touch('touchmove', 20, 120);
-    document.body.dispatchEvent(move);
-    expect(move.defaultPrevented).toBe(false);
+    expect(swipe(300, 120).defaultPrevented).toBe(false);
   });
 
-  it('cancels a vertical wheel while pinned', () => {
+  it('cancels a vertical wheel over the pinned reel', () => {
     lock.arm('Cabc');
     const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true });
-    document.body.dispatchEvent(wheel);
+    slides()[0]!.dispatchEvent(wheel);
     expect(wheel.defaultPrevented).toBe(true);
   });
 
   it('leaves wheel scrolling inside the reply box alone', () => {
     lock.arm('Cabc');
     const textarea = document.createElement('textarea');
-    document.body.appendChild(textarea);
+    slides()[0]!.appendChild(textarea);
     const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true });
     textarea.dispatchEvent(wheel);
     expect(wheel.defaultPrevented).toBe(false);
+  });
+
+  it('lets the comment sheet scroll: it is outside the locked slide', () => {
+    // Regression: cancelling every vertical gesture on the document also froze
+    // the comment sheet, the caption, and the thread behind the modal.
+    lock.arm('Cabc');
+    const sheet = document.createElement('div');
+    sheet.id = 'comments';
+    document.body.appendChild(sheet);
+
+    expect(swipe(300, 120, sheet).defaultPrevented).toBe(false);
+    const wheel = new WheelEvent('wheel', { deltaY: 120, bubbles: true, cancelable: true });
+    sheet.dispatchEvent(wheel);
+    expect(wheel.defaultPrevented).toBe(false);
+  });
+
+  it('falls back to blocking everywhere when the reel cannot be located', () => {
+    // Fail-open on selectors is the rule for cosmetics; the gesture layer must
+    // not open a bypass when the slide selectors break.
+    document.body.innerHTML = '<div id="unknown"><p>not a reel</p></div>';
+    lock.arm('Cabc');
+    const move = touch('touchmove', 22, 180);
+    document.body.dispatchEvent(touch('touchstart', 20, 300));
+    document.body.dispatchEvent(move);
+    expect(move.defaultPrevented).toBe(true);
   });
 });
 

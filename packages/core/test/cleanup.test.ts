@@ -29,11 +29,14 @@ beforeEach(() => {
       <section id="stories"><div role="list"><a href="/stories/alice/1/"><img alt=""></a></div></section>
       <a href="/direct/t/1/" id="thread"><span>alice</span></a>
       <a href="/p/Cpost/" id="dm-link">a post a friend sent</a>
+      <a href="/reel/Creel/" id="dm-reel">a reel a friend sent</a>
+      <a href="/reels/Cother/" id="dm-share-link">a shared reel link</a>
     </main>
     <nav role="navigation" id="ignav">
       <a href="/" id="nav-home"><svg aria-label="Home"></svg></a>
       <a href="/explore/" id="nav-explore"><svg aria-label="Search"></svg></a>
       <a href="/reels/" id="nav-reels"><svg aria-label="Reels"></svg></a>
+      <a href="/reel/Cloose/" id="nav-reel-item"><svg aria-label="Reel"></svg></a>
       <a href="/direct/inbox/" id="nav-dms"><svg aria-label="Messages"></svg></a>
     </nav>
     <div id="usebanner"><span>Use the app</span><button aria-label="Close">×</button></div>
@@ -72,6 +75,26 @@ describe('runCleanup', () => {
   it('does not hide a post link inside a thread', () => {
     cleanup();
     expect(document.getElementById('dm-link')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
+  it('does not hide a reel a friend sent, so its pin can be armed on tap', () => {
+    // Regression: the in-thread exemption only covered `/p/`, so a `/reel/<id>`
+    // link was hidden before the guard could arm its pin — the one thing the
+    // app promises to keep was unreachable inside a DM.
+    cleanup();
+    expect(document.getElementById('dm-reel')!.hasAttribute('data-di-removed')).toBe(false);
+    expect(document.getElementById('dm-share-link')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
+  it('still hides a reel link that is page chrome, not something sent to you', () => {
+    cleanup();
+    expect(document.getElementById('nav-reel-item')!.getAttribute('data-di-removed')).toBe('blocked-link');
+  });
+
+  it('hides sent reel links in strict mode, where they cannot be opened', () => {
+    settings = { ...DEFAULT_SETTINGS, allowReelsFromDms: false };
+    cleanup();
+    expect(document.getElementById('dm-reel')!.getAttribute('data-di-removed')).toBe('blocked-link');
   });
 
   it('hides the stories tray when stories are disabled', () => {

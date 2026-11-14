@@ -9,7 +9,7 @@
  * We never remove the message composer, a thread, or anything a user typed.
  */
 
-import { normalizePath, routeVerdict, type RouteContext } from '../routes.js';
+import { normalizePath, reelIdForPath, routeVerdict, type RouteContext } from '../routes.js';
 import type { Settings } from '../settings.js';
 import type { SelectorResolver } from './selector.js';
 
@@ -111,7 +111,13 @@ export function runCleanup(deps: CleanupDeps): void {
     if (!absolute.includes('instagram.com') && !href.startsWith('/')) continue;
     const path = normalizePath(absolute);
     const inThread = anchor.closest("[role='dialog'], article, main");
-    if (inThread && path.startsWith('/p/')) continue;
+    // A single post or reel someone sent you is the one thing this app exists to
+    // keep: the guard arms a pin when it is tapped, so the link must stay
+    // tappable. Without this a `/reel/<id>` link in a thread was hidden before
+    // the click could arm its pin (only `/p/` was exempt), and the promise
+    // "watch the reel a friend sent you" broke at the first tap.
+    const sentItem = reelIdForPath(path) !== null;
+    if (inThread && sentItem && settings.allowReelsFromDms) continue;
     if (routeVerdict(path, ctx).action === 'block') {
       markRemoved(anchor, 'blocked-link', deps);
     }
