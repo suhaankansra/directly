@@ -21,6 +21,11 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 const dist = path.join(root, 'dist');
 
+// Release builds minify the injected script (53 kB → 30 kB) because it is shipped
+// as `dist/inpage.txt` inside the app. Dev builds stay readable so a device
+// WebView can still be inspected with remote debugging.
+const minify = process.argv.includes('--minify') || process.env.DIRECTLY_MINIFY === '1';
+
 const rawPlugin = {
   name: 'raw-text',
   setup(build) {
@@ -46,6 +51,7 @@ await esbuild.build({
   target: ['es2020', 'safari15'],
   platform: 'browser',
   legalComments: 'none',
+  minify,
   plugins: [rawPlugin],
   banner: { js: '/* Directly — in-page core. Built locally; no remote code. */' },
 });
@@ -75,4 +81,6 @@ await writeFile(path.join(dist, 'styles.css'), css, 'utf8');
 execSync('pnpm exec tsc -p tsconfig.build.json', { cwd: root, stdio: 'inherit' });
 
 const bytes = Buffer.byteLength(inpage, 'utf8');
-console.log(`core: inpage.js ${(bytes / 1024).toFixed(1)} kB, native.cjs built`);
+console.log(
+  `core: inpage.js ${(bytes / 1024).toFixed(1)} kB${minify ? ' (minified)' : ''}, native.cjs built`,
+);

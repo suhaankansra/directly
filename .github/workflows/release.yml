@@ -45,6 +45,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the shared core
+        # Shipped artifacts get the small bundle; debug APKs stay readable.
+        env:
+          DIRECTLY_MINIFY: '1'
         run: pnpm build:core
 
       - name: Install app dependencies
@@ -110,6 +113,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build the shared core
+        # Shipped artifacts get the small bundle; debug APKs stay readable.
+        env:
+          DIRECTLY_MINIFY: '1'
         run: pnpm build:core
 
       - name: Install app dependencies

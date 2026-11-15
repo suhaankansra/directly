@@ -29,8 +29,9 @@ knowingly left.
   It sets attributes rather than mutating React-owned DOM, so Instagram's own render is not disturbed.
 - CSS is injected once, at `document_start`, before first paint: this removes the white flash *and*
   avoids a reflow storm later.
-- Cost measured: inpage bundle 49.5 kB unminified. Minifying would take it to roughly 20 kB, at the
-  cost of debuggability on a device; not done yet — flag for release builds.
+- Cost measured: inpage bundle 53.1 kB unminified, 30.3 kB minified. Release builds set
+  `DIRECTLY_MINIFY=1` so the shipped script is the small one; dev builds stay unminified so a device
+  WebView can still be inspected with remote debugging.
 
 ## 3. Remote selector config — the design, concretely
 
