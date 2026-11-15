@@ -92,14 +92,15 @@ eas build --platform ios --profile production
 eas submit --platform ios
 ```
 
-`eas.json` (create with `eas build:configure`, then add):
+`eas.json` is committed at `apps/ios/eas.json`. `eas login` then `eas build:configure` links the project
+and writes `extra.eas.projectId` into `app.json`; it does not overwrite the profiles below.
 
 ```json
 {
   "cli": { "version": ">= 12.0.0" },
   "build": {
     "development": { "developmentClient": true, "distribution": "internal" },
-    "preview": { "distribution": "internal" },
+    "preview": { "distribution": "internal", "android": { "buildType": "apk" } },
     "production": { "autoIncrement": true }
   },
   "submit": { "production": {} }
@@ -109,8 +110,9 @@ eas submit --platform ios
 TestFlight steps: build → App Store Connect → TestFlight → add the build to a group → install via the
 TestFlight app → run the device checklist in `09-test-plan.md` §1–3.
 
-**Before the first build:** set a real `ios.bundleIdentifier`, a support URL, and a privacy-policy URL
-(the site's `privacy.html`, hosted anywhere static).
+**Before the first build:** the bundle id is `com.directly.app` (already in `app.json`, Android package
+`com.directly.app`). Still needed: a support URL and a privacy-policy URL — the latter is the site's
+`privacy.html`, which needs to be hosted first (`§8`).
 
 ## 5. Safari Web Extension (iOS + macOS)
 
@@ -166,18 +168,25 @@ Any static host. No build environment needed beyond `pnpm build:web`.
 cd apps/web && pnpm build          # → apps/web/dist
 ```
 
+- **GitHub Pages (what we use):** `.github/workflows/pages.yml` builds and publishes
+  `apps/web/dist` on every push that touches `apps/web/**`. Live at
+  <https://suhaankansra.github.io/directly/>, so the policy URL is
+  <https://suhaankansra.github.io/directly/privacy.html>. The Pages source must be
+  *GitHub Actions* (Settings → Pages, or `gh api -X POST repos/suhaankansra/directly/pages -f build_type=workflow`).
 - **Cloudflare Pages / Netlify / Vercel:** upload `apps/web/dist`, set no build command, no env vars.
-- **GitHub Pages:** push `apps/web/dist` to a `gh-pages` branch.
-- After deploying, update the two placeholder lines: the support address on `privacy.html` and in the
-  extension's `privacy.html`, and the store links in the four install cards once the listings exist.
+- Still to do after the listings exist: the store links in the four install cards.
+- Contact, on both privacy pages, is the repo's issue tracker rather than an address — there is no
+  mailbox behind this project, and a dead `support@` would be worse than a working link.
 
 ## 9. Pre-submission checklist
 
 - [ ] Replace `directly@example.com` in the Firefox manifest with a real add-on id
-- [ ] Replace both "Contact" placeholders with a real address
-- [ ] Decide whether `tabs` can be dropped from the extension manifest
-- [ ] Minify the in-page bundle for release (`esbuild --minify`) and re-run the fixture checks
+- [x] Replace both "Contact" placeholders — both privacy pages point at the repo issue tracker
+- [x] Decide whether `tabs` can be dropped from the extension manifest — dropped; only `tabs.update()`/`onRemoved` are used, which need no permission
+- [x] Minify the in-page bundle for release — `DIRECTLY_MINIFY=1 pnpm build:core` in `release.yml`; dev builds stay readable
 - [ ] Run the ten-observation checklist in `09-test-plan.md` §5 logged in, on a phone and at 1440px
 - [ ] Confirm R1 (WKWebView login) on a real device before spending time on App Store assets
 - [ ] Regenerate icons if the brand changes: `node tools/make-icons.mjs`
-- [ ] Add `eas.json` and a real bundle id
+- [x] Add `eas.json` and a real bundle id — `apps/ios/eas.json` is committed; `com.directly.app` on both platforms
+- [x] Privacy-policy URL — <https://suhaankansra.github.io/directly/privacy.html> (GitHub Pages)
+- [ ] First EAS build: sign in, `eas build:configure` (adds `extra.eas.projectId`), then a support URL
