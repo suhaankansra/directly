@@ -31,6 +31,40 @@ const UPSell_PHRASES = [
 
 const REMOVABLE_ROLES = new Set(['banner', 'dialog', 'complementary']);
 
+/**
+ * Elements that mean "this container is the inbox or a conversation".
+ *
+ * Anything matching is never removed by *any* rule below: the whole point of
+ * the app is that losing the inbox is impossible (D017, invariant 4). The
+ * thread link alone is not the whole story either — an empty inbox has no
+ * `/direct/t/` link, which is why the navigation rule below also insists on
+ * two dead ends, not one.
+ */
+const MESSAGE_SURFACE_SELECTOR = [
+  "a[href*='/direct/t/']",
+  'textarea',
+  'input',
+  "[contenteditable='true']",
+  "[role='textbox']",
+].join(', ');
+
+function holdsMessageSurface(el: Element): boolean {
+  return el.matches(MESSAGE_SURFACE_SELECTOR) || el.querySelector(MESSAGE_SURFACE_SELECTOR) !== null;
+}
+
+/**
+ * A generic `div[role='list']` is only a stories tray if it shows stories.
+ * Without this marker the rail candidate list can match the conversation list,
+ * and hiding that is the one failure that must not happen.
+ */
+function looksLikeStoriesTray(el: Element): boolean {
+  return (
+    el.querySelector(
+      "a[href*='/stories/'], [aria-label='Story' i], [aria-label='Stories' i], img[alt*='story' i]",
+    ) !== null
+  );
+}
+
 function markRemoved(el: Element, label: string, deps: CleanupDeps): void {
   const html = el as HTMLElement;
   html.setAttribute('data-di-removed', label);
@@ -66,24 +100,26 @@ export function runCleanup(deps: CleanupDeps): void {
       // message surface. A navigation element that wraps a thread list or a
       // composer is not chrome, whatever it links to — taking it out would blank
       // the inbox or the reply box, the one failure this app must not have.
-      const holdsMessageUi =
-        el.querySelector("a[href*='/direct/t/']") !== null ||
-        el.querySelector("textarea, input, [contenteditable='true'], [role='textbox']") !== null;
-      if (holdsMessageUi) continue;
+      if (holdsMessageSurface(el)) continue;
 
-      // Second line: only hide a navigation container that actually carries
-      // routes we block. Some builds wrap the DM inbox in a <nav>, and hiding
-      // every match would blank the only screen this app exists for.
-      const hasBlockedLink = Array.from(el.querySelectorAll('a[href]')).some((anchor) => {
+      // Second line: only hide a navigation container that carries several of
+      // the routes we block. Some builds wrap the DM inbox in a <nav>, and an
+      // empty inbox wrapper still has a single Home link — one dead end is not
+      // a navigation bar, and hiding it would blank the screen.
+      const blockedPaths = new Set<string>();
+      for (const anchor of Array.from(el.querySelectorAll('a[href]'))) {
         const href = anchor.getAttribute('href');
-        if (!href) return false;
+        if (!href) continue;
         try {
-          return routeVerdict(new URL(href, win.location.href).href, navContext).action === 'block';
+          const absolute = new URL(href, win.location.href).href;
+          if (routeVerdict(absolute, navContext).action === 'block') {
+            blockedPaths.add(normalizePath(absolute));
+          }
         } catch {
-          return false;
+          /* unparsable href: not evidence of chrome */
         }
-      });
-      if (!hasBlockedLink) continue;
+      }
+      if (blockedPaths.size < 2) continue;
       markRemoved(el, 'ig-nav', deps);
     }
   }
@@ -131,13 +167,21 @@ export function runCleanup(deps: CleanupDeps): void {
     const text = (el.textContent ?? '').trim().toLowerCase();
     if (text.length === 0 || text.length > 40) continue;
     if (!UPSell_PHRASES.some((phrase) => text.includes(phrase))) continue;
-    markRemoved(closestBanner(win, el), 'app-banner', deps);
+    const banner = closestBanner(win, el);
+    // The close button of this nag usually sits on the inbox, and a shallow
+    // page can make `closestBanner` climb to a wrapper that holds the whole
+    // screen. Never let the nag take the message surface down with it.
+    if (holdsMessageSurface(banner)) continue;
+    markRemoved(banner, 'app-banner', deps);
   }
 
   // 4. Stories: when disabled, hide the tray so there is no tap target.
   if (!settings.allowStories) {
     for (const el of resolver.all(doc, 'storiesRail')) {
-      if (el.querySelector("a[href^='/direct/']")) continue;
+      if (holdsMessageSurface(el)) continue;
+      // Fail open: an unmarked list stays visible rather than risk hiding the
+      // conversation list, which is a `div[role='list']` too.
+      if (!looksLikeStoriesTray(el)) continue;
       markRemoved(el, 'stories', deps);
     }
   }

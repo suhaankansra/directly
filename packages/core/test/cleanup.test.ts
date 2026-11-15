@@ -108,6 +108,33 @@ describe('runCleanup', () => {
     expect(document.querySelector('#stories > div')!.hasAttribute('data-di-removed')).toBe(false);
   });
 
+  it('keeps a navigation wrapper that holds the inbox with no thread open', () => {
+    // An empty inbox or the requests screen has no `/direct/t/` link, so the
+    // old guard let a `<nav>` wrapping it be hidden — leaving nothing at all.
+    document.body.innerHTML = `
+      <nav role="navigation" id="wrap">
+        <a href="/" id="wrap-home"><svg aria-label="Home"></svg></a>
+        <a href="/direct/inbox/" id="wrap-inbox">Messages</a>
+      </nav>`;
+    cleanup();
+    expect(document.getElementById('wrap')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
+  it('does not remove a "Use the app" banner that wraps the conversation', () => {
+    document.body.innerHTML = `
+      <div id="banner"><span>Use the app</span><a href="/direct/t/7/">alice</a></div>`;
+    cleanup();
+    expect(document.getElementById('banner')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
+  it('keeps a role=list that is the conversation list, not a stories tray', () => {
+    // `div[role='list']` is also how the inbox rows are wrapped.
+    document.body.innerHTML = `
+      <main><div role="list" id="threads"><div role="listitem">alice · see you at 8</div></div></main>`;
+    cleanup();
+    expect(document.getElementById('threads')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
   it('is idempotent', () => {
     cleanup();
     cleanup();

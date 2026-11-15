@@ -14,14 +14,17 @@
  * screen this app exists for (D017: cosmetics fail open). `:has()` is available
  * in every WebView that can run this app (Chromium 105+ / iOS 15.4+). */
 :is(nav, div)[role='navigation']:is(
-  :has(a[href='/']),
-  :has(a[href='/explore/']),
-  :has(a[href='/reels/'])
+  /* At least two dead ends, not one: a wrapper around an empty inbox has a
+   * single Home link and would otherwise be hidden, leaving a blank screen. */
+  :has(a[href='/']):has(a[href='/explore/']),
+  :has(a[href='/']):has(a[href='/reels/']),
+  :has(a[href='/explore/']):has(a[href='/reels/'])
 ):not(
   :has(a[href*='/direct/t/']),
   :has(textarea),
   :has(input),
-  :has([contenteditable='true'])
+  :has([contenteditable='true']),
+  :has([role='textbox'])
 ) {
   display: none !important;
 }
@@ -38,9 +41,11 @@ a[href='https://www.threads.com/'] {
 }
 
 /* The "Use the app" / "Open in app" nag is removed by cleanup.ts (it needs a
- * text match); this catches its close button container as a backstop. */
-div[role='banner']:has(a[href*='app.link']),
-div[role='dialog']:has(a[href*='app.link']) {
+ * text match); this catches its close button container as a backstop. A banner
+ * is never matched when it wraps a conversation (the `:has(a[href*='/direct/'])`
+ * guard cleanup.ts applies): hiding it would take the inbox with it. */
+div[role='banner']:has(a[href*='app.link']):not(:has(a[href*='/direct/'])),
+div[role='dialog']:has(a[href*='app.link']):not(:has(a[href*='/direct/'])) {
   display: none !important;
 }
 

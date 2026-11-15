@@ -46,6 +46,24 @@ function isEditable(el: Element | null): boolean {
   return (el as HTMLElement).isContentEditable === true;
 }
 
+/**
+ * Never treat a container that holds the inbox or a conversation as a reel
+ * slide. When no video is on the page the slide fallback matches every
+ * `article` and `div[role='group']` on the document, and hiding one of those
+ * would take the message surface with it (invariant 4).
+ */
+const MESSAGE_SURFACE_SELECTOR = [
+  "a[href*='/direct/']",
+  'textarea',
+  'input',
+  "[contenteditable='true']",
+  "[role='textbox']",
+].join(', ');
+
+function holdsMessageSurface(el: Element): boolean {
+  return el.matches(MESSAGE_SURFACE_SELECTOR) || el.querySelector(MESSAGE_SURFACE_SELECTOR) !== null;
+}
+
 export function installReelLock(deps: ReelLockDeps): ReelLock {
   const { win, resolver } = deps;
   const doc = win.document;
@@ -173,6 +191,11 @@ export function installReelLock(deps: ReelLockDeps): ReelLock {
         for (const video of Array.from(el.querySelectorAll('video'))) applyLoop(video);
       } else {
         el.removeAttribute(ACTIVE_ATTR);
+        if (holdsMessageSurface(el)) {
+          // Not a reel at all: leave it exactly as Instagram rendered it.
+          el.removeAttribute(HIDDEN_ATTR);
+          continue;
+        }
         el.setAttribute(HIDDEN_ATTR, 'true');
         for (const video of Array.from(el.querySelectorAll('video'))) restoreLoop(video);
       }

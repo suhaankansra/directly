@@ -85,6 +85,23 @@ describe('arm / disarm', () => {
     expect(video.loop).toBe(true);
   });
 
+  it('never hides a container that holds the message surface', () => {
+    // With no video on the page the slide fallback matches every `article`; a
+    // thread or an inbox card must not be treated as the next reel.
+    document.body.innerHTML = `
+      <article id="slide"><p>a reel without a video yet</p></article>
+      <article id="inbox"><a href="/direct/t/1/">alice</a></article>`;
+    lock.dispose();
+    lock = installReelLock({
+      win: window,
+      resolver: new SelectorResolver('mobile'),
+      layout: () => 'mobile',
+    });
+    lock.arm('Cabc');
+    expect(document.getElementById('inbox')!.hasAttribute('data-di-slide-hidden')).toBe(false);
+    expect(document.getElementById('slide')!.getAttribute('data-di-slide-active')).toBe('true');
+  });
+
   it('restores every slide on disarm', () => {
     lock.arm('Cabc');
     lock.disarm();
