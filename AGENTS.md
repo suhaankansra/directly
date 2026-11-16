@@ -50,10 +50,11 @@ they are pushed and pulled, so the two trees drift silently.
 ## Commands
 
 ```bash
-pnpm --filter @directly/core test        # 150 tests, jsdom, no network
+pnpm --filter @directly/core test        # 167 tests, jsdom, no network
 pnpm build:core                          # -> packages/core/dist/inpage.js
 cd apps/ios && pnpm prebuild             # regenerate src/lib/injectedScript.ts
 cd apps/ios && pnpm typecheck
+tools/resign-ipa.sh <ipa> --profile <mobileprovision>   # sign the release IPA for a phone
 ```
 
 **After any change under `packages/core/src/inpage/**` or `styles/**`, run

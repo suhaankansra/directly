@@ -142,29 +142,24 @@ AirDropping to a phone. Three routes, easiest first.
    (`eas device:create`). That is the only route here that produces an IPA which installs on a phone
    that is not plugged into your machine.
 
-3. **Re-sign by hand** — a paid team with a Development or Ad Hoc profile that already lists the
-   device UDID:
+3. **Sign it yourself** — a paid team with a Development or Ad Hoc profile that already lists the
+   device. `tools/resign-ipa.sh` is that, in one command:
 
    ```bash
-   rm -rf /tmp/directly-sign && mkdir /tmp/directly-sign && cd /tmp/directly-sign
-   unzip -q ~/Downloads/directly-main-unsigned.ipa
-   APP="$(ls -d Payload/*.app | head -1)"          # Payload/Directly.app today, but not a promise
-   cp ~/Library/MobileDevice/Provisioning\ Profiles/<profile>.mobileprovision \
-      "$APP/embedded.mobileprovision"
-
-   # Nested code first: an unsigned framework inside the bundle fails the whole install.
-   for item in "$APP"/Frameworks/*; do
-     codesign -f -s "Apple Development: Your Name (TEAMID)" --generate-entitlement-der "$item"
-   done
-   codesign -f -s "Apple Development: Your Name (TEAMID)" --generate-entitlement-der "$APP"
-
-   zip -qry ../directly-signed.ipa Payload          # -> /tmp/directly-signed.ipa
-   xcrun devicectl device install app --device <UDID> "$APP"
+   tools/resign-ipa.sh ~/Downloads/directly-main-unsigned.ipa \
+     --profile ~/Downloads/Directly.mobileprovision \
+     --device 00008110-000A1B2C3D4E5F60     # checks the UDID, then installs with devicectl
    ```
 
-   Two failures worth recognising: *"not signed with a valid certificate"* means a nested binary kept
-   its old signature — re-run the loop; the app opening and then dying on launch means the profile's
-   UDID list does not include that phone, which re-signing cannot fix.
+   It embeds the profile, takes the entitlements from the profile rather than a guess, signs nested
+   code deepest-first (a framework inside a framework before its container), verifies the result and
+   writes `…-signed.ipa` beside the input. `--dry-run` prints the plan and signs nothing; `--identity`
+   overrides the first codesigning identity in your keychain.
+
+   Two failures worth recognising, both now caught before the phone is involved: *"not signed with a
+   valid certificate"* means a nested binary kept its old signature, and an app that opens then dies
+   on launch means the profile's UDID list does not include that phone — which re-signing cannot fix,
+   so the script refuses the UDID up front.
 
 ## 5. Safari Web Extension (iOS + macOS)
 

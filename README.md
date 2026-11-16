@@ -111,6 +111,16 @@ pnpm build:core && node apps/ios/scripts/gen-injection.mjs
 node tools/make-icons.mjs     # extension, web and iOS icons, generated from code
 ```
 
+### Sideloading the release IPA
+
+```bash
+tools/resign-ipa.sh ~/Downloads/directly-main-unsigned.ipa \
+  --profile ~/Downloads/Directly.mobileprovision   # --device <udid> to install it too
+```
+
+The release IPA is unsigned, so iOS refuses it until it carries a signature from your own team.
+`docs/11-ship-prep.md` §4 covers the other routes (Sideloadly, AltStore, EAS).
+
 ## How it works in one paragraph
 
 Instagram is single-page, so navigation never triggers a document load; that is why the guard has two
