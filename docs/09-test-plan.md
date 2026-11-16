@@ -1,6 +1,6 @@
 # 09 — Test plan and acceptance
 
-Legend: **PASS (auto)** = covered by `pnpm test` (120 tests). **PASS (browser)** = verified in
+Legend: **PASS (auto)** = covered by `pnpm test` (150 tests). **PASS (browser)** = verified in
 Chromium against the local fixture (`packages/core/test/fixtures/serve.mjs`). **DEVICE** = needs your
 phone or laptop, because it needs a real Instagram session. **N/A** = surface does not exist yet.
 
@@ -9,7 +9,7 @@ phone or laptop, because it needs a real Instagram session. **N/A** = surface do
 ```bash
 pnpm install
 pnpm build            # core → extension → web
-pnpm test             # 120 core tests
+pnpm test             # 150 core tests
 pnpm typecheck        # core, extension, web
 cd apps/ios && npm install && npx expo run:ios     # the iOS app
 node packages/core/test/fixtures/serve.mjs         # fixture :4319
@@ -45,12 +45,17 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 | B8 | "Use the app" banner never visible | PASS (browser: `data-di-removed="app-banner"`) |
 | B9 | Deep link to a single reel with no DM origin is blocked | PASS (auto: host decision; browser: cold load redirects) |
 | B10 | Unknown route while logged in is blocked | PASS (auto) |
+| B11 | Profile grid tile (`/<user>/p/<code>/`) opens one frozen item, not a browser | PASS (auto: tile shape parses to a single id; unpinned → blocked) |
+| B12 | Stories archive (`/archive/stories/`) follows the Stories toggle instead of falling through as an unknown route | PASS (auto) |
 
 ## 3. Surfaces
 
 | Surface | Status |
 |---|---|
 | iOS app, real device + iPhone SE size | DEVICE (typechecked only) |
+| Loading surface — glass card with sheen sweep on iOS, Material surface + spinner on Android; one component, shown per load | DEVICE (typechecked only) |
+| Android tab bar — solid tonal surface, active pill indicator, ripple, bold active label (no `Glass` blur: Android cannot sample a WebView) | DEVICE (typechecked only) |
+| Unread DM badge on the DM tab + app-icon badge + local alert when the count rises away from the inbox | DEVICE (typechecked only; no push by design — D031, so nothing arrives while the app is closed) |
 | Safari on iPhone with the extension enabled | DEVICE (needs the app build) |
 | Chrome at 1440px and at ~800px | PASS (browser, fixture: 390 / 1440; 800 is the layout switch point, unit-tested via `detectLayout`) |
 | Firefox desktop | DEVICE (build produced, not loaded) |
@@ -68,6 +73,10 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 | R5 | Oversized / wrong-version bridge messages dropped | PASS (auto) |
 | R6 | Extension storage unavailable | PASS (code falls back to defaults; not unit-tested — the wrapper is try/catch) |
 | R7 | Redeem: blocked nav while a toast is showing | PASS (browser) |
+| R8 | Boot overlay never holds the page hostage: it waits for real text, and after a 2.5 s deadline it goes anyway | PASS (code review; polling loop is bounded, untested) |
+| R9 | Turning Stories back on after they were hidden restores the hidden chrome without a reload | PASS (auto: `restoreRemovals` reinstates the original inline `display`) |
+| R10 | Notification permission refused → no alerts, everything else unchanged | PASS (code: every call is permission-gated and try/catch) |
+| R11 | Unread count message cannot carry content: only an integer 0–999 survives validation | PASS (auto: `di:unread` drops strings, negatives, fractions and extra fields) |
 
 ## 5. Manual checklist for the ten things I cannot see
 
@@ -81,6 +90,8 @@ each one matters). It takes about ten minutes:
 5. Do `j`/`k` and the up/down chevrons work in the desktop reel modal?
 6. Does the mobile-web "Use the app" banner have a close button?
 7. Is `/accounts/activity/` still the notifications route after login?
+8. Sitting on the Profile tab, when a DM arrives: does the DM tab badge appear, and one alert only (not one per re-render)? Does the count drop when you read the thread?
+9. Does Instagram's DM link carry an unread count in its `aria-label` or as a badge node? If neither, `unread.ts` reads 0 and needs the real markup.
 8. Does the profile Reels tab open a grid or a single reel?
 9. Does back from a profile ever land on the feed?
 10. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?

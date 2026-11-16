@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import type { TabId } from '@directly/core';
 
@@ -10,6 +10,8 @@ type Props = {
   active: TabId | null;
   onSelect: (tab: TabId) => void;
   bottomInset: number;
+  /** Unread DMs, as a count only — the page never sends who or what. */
+  unread?: number;
 };
 
 const ORDER: TabId[] = ['inbox', 'activity', 'profile', 'lock'];
@@ -60,10 +62,20 @@ function Icon({ tab, active }: { tab: TabId; active: boolean }) {
   );
 }
 
-export function TabBar({ active, onSelect, bottomInset }: Props) {
+const IOS = Platform.OS === 'ios';
+
+export function TabBar({ active, onSelect, bottomInset, unread = 0 }: Props) {
   return (
-    <View style={[styles.bar, { paddingBottom: Math.max(bottomInset, spacing.sm) }]}>
-      <Glass style={StyleSheet.absoluteFill} intensity={80} cornerRadius={0} />
+    <View
+      style={[
+        styles.bar,
+        IOS ? styles.barIos : styles.barAndroid,
+        { paddingBottom: Math.max(bottomInset, spacing.sm) },
+      ]}
+    >
+      {/* iOS floats a glass sheet over the page; Android uses a solid tonal
+       * surface with a Material indicator, so there is nothing to blur. */}
+      {IOS ? <Glass style={StyleSheet.absoluteFill} intensity={80} cornerRadius={0} /> : null}
       {ORDER.map((tab) => {
         const isActive = active === tab;
         return (
@@ -73,10 +85,32 @@ export function TabBar({ active, onSelect, bottomInset }: Props) {
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={LABELS[tab]}
             onPress={() => onSelect(tab)}
-            style={({ pressed }) => [styles.item, isActive && styles.itemActive, pressed && styles.pressed]}
+            android_ripple={IOS ? undefined : { color: 'rgba(255,255,255,0.07)', borderless: true }}
+            style={({ pressed }) => [
+              styles.item,
+              !IOS && styles.itemAndroid,
+              isActive && (IOS ? styles.itemActiveIos : styles.itemActiveAndroid),
+              pressed && styles.pressed,
+            ]}
           >
-            <Icon tab={tab} active={isActive} />
-            <Text style={[styles.label, isActive && styles.labelActive]}>{LABELS[tab]}</Text>
+            {isActive && !IOS ? <View style={styles.indicator} pointerEvents="none" /> : null}
+            <View style={styles.iconWrap}>
+              <Icon tab={tab} active={isActive} />
+              {tab === 'inbox' && unread > 0 ? (
+                <View style={styles.badge} pointerEvents="none">
+                  <Text style={styles.badgeText}>{unread > 99 ? '99+' : unread}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text
+              style={[
+                styles.label,
+                isActive && (IOS ? styles.labelActiveIos : styles.labelActiveAndroid),
+                isActive && !IOS && styles.labelActiveAndroidWeight,
+              ]}
+            >
+              {LABELS[tab]}
+            </Text>
           </Pressable>
         );
       })}
@@ -87,10 +121,19 @@ export function TabBar({ active, onSelect, bottomInset }: Props) {
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
-    // No opaque fill: the Glass layer behind the row supplies background and rim.
+    paddingTop: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: 'rgba(255,255,255,0.12)',
-    paddingTop: spacing.sm,
+  },
+  /** iOS: the Glass layer supplies fill, sheen and rim. */
+  barIos: {
+    backgroundColor: 'transparent',
+  },
+  /** Android: a navigation bar sits on its own tonal surface. */
+  barAndroid: {
+    backgroundColor: colors.surface,
+    borderTopColor: colors.border,
+    elevation: 8,
   },
   item: {
     flex: 1,
@@ -101,7 +144,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderRadius: radius.md,
   },
-  itemActive: {
+  itemAndroid: {
+    // The frozen indicator is absolutely positioned; clipping keeps it a pill.
+    overflow: 'hidden',
+  },
+  /** The pill that sits behind the icon, as Material's active indicator. */
+  indicator: {
+    position: 'absolute',
+    top: 3,
+    width: 64,
+    height: 30,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accentSoft,
+  },
+  itemActiveIos: {
     backgroundColor: 'rgba(108,92,231,0.22)',
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(168,158,255,0.55)',
@@ -111,15 +167,46 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 0 },
     elevation: 4,
   },
+  itemActiveAndroid: {
+    backgroundColor: 'transparent',
+  },
   pressed: {
     opacity: 0.7,
+  },
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /** Sits on the icon, not the label, so it reads as part of the DM tab. */
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -11,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 5,
+    borderRadius: radius.pill,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   label: {
     fontSize: 10,
     color: colors.muted,
     fontWeight: '500',
   },
-  labelActive: {
+  labelActiveIos: {
     color: colors.accent,
+  },
+  labelActiveAndroid: {
+    color: colors.text,
+  },
+  labelActiveAndroidWeight: {
+    fontWeight: '600',
   },
 });

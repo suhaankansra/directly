@@ -18,7 +18,7 @@ import {
   type TabId,
 } from '../routes.js';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../settings.js';
-import { runCleanup } from './cleanup.js';
+import { restoreRemovals, runCleanup } from './cleanup.js';
 import { installRouteGuard, type RouteGuard } from './guard.js';
 import { createNavBar, type NavBar } from './navBar.js';
 import { createObserver, type Observer } from './observer.js';
@@ -26,6 +26,7 @@ import { installReelLock, type ReelLock } from './reelLock.js';
 import { detectLayout, SelectorResolver } from './selector.js';
 import { bootOverlay, injectStyles } from './styles.js';
 import { createToast, type Toast } from './toast.js';
+import { readUnread } from './unread.js';
 
 export const CORE_VERSION = '0.1.0';
 
@@ -159,6 +160,11 @@ export function boot(options: BootOptions = {}): Booted {
     try {
       reelLock.tick();
       cleanupNow();
+      // The avatar link can render several mutation batches after the route
+      // settles; without this the account is only ever read once per route and
+      // a late-painted nav leaves the Profile tab with no target.
+      publishAccount();
+      publishUnread();
     } catch {
       /* never break the page */
     }
@@ -225,6 +231,7 @@ export function boot(options: BootOptions = {}): Booted {
 
   let lastAccount: string | null | undefined;
   let lastSignedIn: boolean | undefined;
+  let lastUnread = -1;
 
   /**
    * The signed-in username, read from a profile link that Instagram already
@@ -232,17 +239,28 @@ export function boot(options: BootOptions = {}): Booted {
    * never sent anywhere else, never used for a request.
    */
   function detectAccount(): string | null {
-    const anchors = Array.from(doc.querySelectorAll<HTMLAnchorElement>("a[href^='/'][role='link']"));
-    const candidates: string[] = [];
+    // Only *your* avatar is evidence of your account. Instagram renders it as
+    // `<a href="/<you>/"><img alt="<you>'s profile picture"></a>` in the page
+    // chrome. Any other single-segment link is somebody else: in a thread the
+    // first one is the person you are talking to, and guessing from it opened
+    // their profile from our Profile tab.
+    const anchors = Array.from(doc.querySelectorAll<HTMLAnchorElement>("a[href^='/']"));
+    let fallback: string | null = null;
     for (const anchor of anchors) {
       const match = /^\/([A-Za-z0-9._]{1,30})\/$/.exec(anchor.getAttribute('href') ?? '');
-      if (!match) continue;
-      const name = match[1];
+      const name = match?.[1];
       if (!name) continue;
-      candidates.push(name);
-      if (anchor.querySelector("img[alt*='profile' i]")) return name;
+      // Avatars in a feed card, a suggested-accounts rail or a profile grid
+      // belong to other people; the account chrome lives outside the content.
+      if (anchor.closest('main, article')) continue;
+      const alt = anchor.querySelector('img[alt]')?.getAttribute('alt') ?? '';
+      if (!/profile picture/i.test(alt)) continue;
+      // The alt must name the same handle as the href, or neither is trustworthy.
+      if (!alt.toLowerCase().includes(name.toLowerCase())) continue;
+      if (anchor.closest("nav, [role='navigation'], header")) return name;
+      fallback ??= name;
     }
-    return candidates[0] ?? null;
+    return fallback;
   }
 
   function publishAccount(): void {
@@ -258,12 +276,27 @@ export function boot(options: BootOptions = {}): Booted {
     post({ v: 1, type: 'di:account', username, signedIn });
   }
 
+  /**
+   * The unread DM count, as a number, so the host can badge the Inbox tab.
+   * Never the sender, a preview or any message text.
+   */
+  function publishUnread(): void {
+    // `null` is "the inbox link is not on this page" (a thread, a story), not
+    // zero: the host keeps the last count rather than flickering down and then
+    // announcing the same messages again on the way back to the inbox.
+    const count = readUnread(doc, resolver);
+    if (count === null || count === lastUnread) return;
+    lastUnread = count;
+    post({ v: 1, type: 'di:unread', count });
+  }
+
   function publishUrl(): void {
     const path = normalizePath(win.location.href);
     post({ v: 1, type: 'di:url', path, layout: currentLayout(), pinId: pin });
     post({ v: 1, type: 'di:tab', tab: tabForPath(path) });
     nav?.sync(win.location.href);
     publishAccount();
+    publishUnread();
   }
 
   const guard: RouteGuard = installRouteGuard({
@@ -332,6 +365,9 @@ export function boot(options: BootOptions = {}): Booted {
     switch (message.type) {
       case 'di:settings':
         settings = message.settings;
+        // A removal is one-way until we undo it: turning Stories on again must
+        // bring back what the previous settings hid, without a reload.
+        restoreRemovals(doc);
         observer.flush();
         cleanupNow();
         break;
@@ -362,6 +398,7 @@ export function boot(options: BootOptions = {}): Booted {
     settings: () => settings,
     applySettings: (next: unknown) => {
       settings = mergeSettings(next, settings);
+      restoreRemovals(doc);
       observer.flush();
       cleanupNow();
     },

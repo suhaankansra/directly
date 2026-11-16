@@ -1,5 +1,5 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, StyleSheet, View } from 'react-native';
+import { Linking, StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent, type WebViewNavigation } from 'react-native-webview';
 import {
   INBOX_PATH,
@@ -14,6 +14,7 @@ import {
 import { injectionScript, navigateMessage, readPageMessage, settingsMessage } from '../lib/bridge';
 import { inpageScript } from '../lib/injectedScript';
 import { colors } from '../theme';
+import { LoadingSurface } from './LoadingSurface';
 
 export type IgWebViewHandle = {
   /** Returns false when there is nothing to go back to. */
@@ -30,6 +31,8 @@ type Props = {
   onRoute: (path: string, layout: Layout, pinId: string | null, tab: TabId | null) => void;
   onBlocked: (reason: string, path: string) => void;
   onAccount: (username: string | null, signedIn: boolean) => void;
+  /** Unread DMs, as a count only. */
+  onUnread: (count: number) => void;
   onLoadingChange: (loading: boolean) => void;
   /** Changing the nonce navigates to `path`. */
   navigateTarget: { path: string; nonce: number } | null;
@@ -57,14 +60,17 @@ const TypedWebView = WebView as unknown as React.ComponentType<
 >;
 
 export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
-  { settings, onRoute, onBlocked, onAccount, onLoadingChange, navigateTarget, initialPin = null },
+  { settings, onRoute, onBlocked, onAccount, onUnread, onLoadingChange, navigateTarget, initialPin = null },
   ref,
 ) {
   const webRef = useRef<WebViewCommands | null>(null);
   const lastPath = useRef<string>(INBOX_PATH);
   const pinRef = useRef<string | null>(initialPin);
   const settingsRef = useRef<Settings>(settings);
-  const [firstPaint, setFirstPaint] = useState(false);
+  // Every load, not just the first: a tab tap is a full document load, and
+  // Instagram paints its own logo before its app hydrates. Our surface has to be
+  // on top of that from the first frame.
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     settingsRef.current = settings;
@@ -88,7 +94,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         webRef.current?.injectJavaScript(settingsMessage(next));
       },
       reload: () => {
-        setFirstPaint(false);
+        setLoading(true);
         webRef.current?.reload();
       },
       clearCache: (includeDiskFiles: boolean) => {
@@ -157,11 +163,15 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
           onAccount(message.username, message.signedIn);
           break;
         }
+        case 'di:unread': {
+          onUnread(message.count);
+          break;
+        }
         default:
           break;
       }
     },
-    [onAccount, onBlocked, onRoute],
+    [onAccount, onBlocked, onRoute, onUnread],
   );
 
   const injectedBeforeLoad = injectionScript(inpageScript, {
@@ -185,10 +195,13 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         injectedJavaScript={injectedAfterLoad}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         onMessage={onMessage}
-        onLoadStart={() => onLoadingChange(true)}
+        onLoadStart={() => {
+          setLoading(true);
+          onLoadingChange(true);
+        }}
         onLoadEnd={() => {
           onLoadingChange(false);
-          setFirstPaint(true);
+          setLoading(false);
         }}
         onNavigationStateChange={(nav) => {
           if (!nav.loading && nav.url?.includes('instagram.com')) {
@@ -213,11 +226,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         domStorageEnabled
         style={styles.webview}        containerStyle={styles.webview}
       />
-      {!firstPaint ? (
-        <View style={styles.skeleton} pointerEvents="none">
-          <ActivityIndicator color={colors.accent} />
-        </View>
-      ) : null}
+      <LoadingSurface visible={loading} />
     </View>
   );
 });
@@ -225,14 +234,4 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   webview: { flex: 1, backgroundColor: colors.bg },
-  skeleton: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.bg,
-  },
 });

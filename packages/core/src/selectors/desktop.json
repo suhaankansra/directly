@@ -9,6 +9,7 @@
     "navReels": ["a[href='/reels/']"],
     "navCreate": ["a[href='/create/select/']", "svg[aria-label='New post']"],
     "navSearch": ["a[href='/explore/search/']", "a[aria-label='Search']"],
+    "dmInbox": ["a[href='/direct/inbox/']", "a[href^='/direct/inbox']", "a[aria-label*='Direct' i]"],
     "navThreads": ["a[href='https://www.threads.net/']", "a[href='https://www.threads.com/']"],
     "storiesRail": ["div[role='list']", "ul[role='list']"],
     "reelModal": ["div[role='dialog']"],

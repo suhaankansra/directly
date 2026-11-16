@@ -58,6 +58,21 @@ export function injectStyles(doc: Document): void {
   });
 }
 
+/**
+ * Has the page rendered anything to read?
+ *
+ * Instagram's shell paints its logo before its app mounts, so "the document
+ * loaded" is not the same as "there is something to look at": measured on the
+ * activity route, the shell is a `main` of 101 empty divs with no text for about
+ * a second. Only text counts as content — a landmark alone does not, or the
+ * overlay leaves exactly in time to show the logo.
+ */
+function hasContent(doc: Document): boolean {
+  if (!doc.body) return false;
+  const text = (doc.body.innerText ?? doc.body.textContent ?? '').trim();
+  return text.length > 0;
+}
+
 export function bootOverlay(doc: Document): { ready: () => void } {
   let node: HTMLElement | null = null;
   let ready = false;
@@ -104,8 +119,18 @@ export function bootOverlay(doc: Document): { ready: () => void } {
         gone = true;
         paint();
       };
-      if (win) win.setTimeout(finish, 220);
-      else finish();
+      if (!win) {
+        finish();
+        return;
+      }
+      // Poll for the first real content, but never hold the page hostage: a
+      // stalled load gets the surface removed anyway and shows what it has.
+      const deadline = Date.now() + 2500;
+      const poll = win.setInterval(() => {
+        if (!hasContent(doc) && Date.now() < deadline) return;
+        win.clearInterval(poll);
+        finish();
+      }, 80);
     },
   };
 }

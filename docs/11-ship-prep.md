@@ -36,6 +36,7 @@ the parts that swallow an hour.
 WHAT YOU KEEP
 • Your DM inbox, threads, notes and message requests
 • Sending text, photos, voice notes, stickers and reactions
+• A badge on the DMs tab and on the app icon when messages are waiting
 • Notifications, including Follow Back
 • Profiles you search for deliberately
 • One reel or post a friend sends you, opened on its own
@@ -56,6 +57,9 @@ instead, with a short note explaining why.
 WHAT IT DOES NOT DO
 • It does not read, store or send your messages or your password
 • It does not have an account system, analytics or a server
+• It cannot alert you once the app is closed: a WebView cannot receive push notifications, and the
+  only way to know about a message in the background would be a server holding your session — the
+  thing this app exists not to have. You get the badge and a local alert while it is open.
 • It does not automate anything: no auto-likes, no auto-follows, no automatic messages
 • It does not modify your Instagram account in any way
 

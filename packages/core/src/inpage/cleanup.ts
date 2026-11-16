@@ -65,11 +65,39 @@ function looksLikeStoriesTray(el: Element): boolean {
   );
 }
 
+const REMOVED_ATTR = 'data-di-removed';
+const DISPLAY_ATTR = 'data-di-display';
+
 function markRemoved(el: Element, label: string, deps: CleanupDeps): void {
   const html = el as HTMLElement;
-  html.setAttribute('data-di-removed', label);
+  if (!html.hasAttribute(REMOVED_ATTR)) {
+    // Remember Instagram's own inline display value (usually empty) so a
+    // restore puts back exactly what was there instead of guessing.
+    html.setAttribute(DISPLAY_ATTR, html.style.getPropertyValue('display'));
+  }
+  html.setAttribute(REMOVED_ATTR, label);
   html.style.setProperty('display', 'none', 'important');
   deps.onRemoved?.(label);
+}
+
+/**
+ * Undo every removal this script made on the current document.
+ *
+ * Hiding is otherwise one-way for as long as the document lives: Instagram is a
+ * single-page app, so turning "allow stories" back on left the tray hidden by a
+ * removal from an earlier settings value — it only came back after a reload.
+ * Cleanup runs again straight after this, so anything still due to be hidden is
+ * hidden again in the same task and never flashes.
+ */
+export function restoreRemovals(doc: Document): void {
+  for (const el of Array.from(doc.querySelectorAll(`[${REMOVED_ATTR}]`))) {
+    const html = el as HTMLElement;
+    const previous = html.getAttribute(DISPLAY_ATTR);
+    html.removeAttribute(REMOVED_ATTR);
+    html.removeAttribute(DISPLAY_ATTR);
+    if (previous) html.style.setProperty('display', previous);
+    else html.style.removeProperty('display');
+  }
 }
 
 function closestBanner(win: Window, el: Element): Element {

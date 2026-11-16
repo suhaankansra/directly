@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { runCleanup } from '../src/inpage/cleanup';
+import { restoreRemovals, runCleanup } from '../src/inpage/cleanup';
 import { SelectorResolver } from '../src/inpage/selector';
 import { DEFAULT_SETTINGS, type Settings } from '../src/settings';
 import type { Layout } from '../src/routes';
@@ -86,6 +86,15 @@ describe('runCleanup', () => {
     expect(document.getElementById('dm-share-link')!.hasAttribute('data-di-removed')).toBe(false);
   });
 
+  it('keeps a profile grid tile tappable', () => {
+    // Instagram links a profile tile as `/<username>/p/<code>/`. Not parsing
+    // that shape hid every tile, so a profile looked like it had no posts.
+    document.body.innerHTML = `
+      <main id="grid"><a href="/alice/p/Ctile/" id="tile"><img alt=""></a></main>`;
+    cleanup();
+    expect(document.getElementById('tile')!.hasAttribute('data-di-removed')).toBe(false);
+  });
+
   it('still hides a reel link that is page chrome, not something sent to you', () => {
     cleanup();
     expect(document.getElementById('nav-reel-item')!.getAttribute('data-di-removed')).toBe('blocked-link');
@@ -139,5 +148,31 @@ describe('runCleanup', () => {
     cleanup();
     cleanup();
     expect(document.getElementById('ignav')!.getAttribute('data-di-removed')).toBe('ig-nav');
+  });
+
+  it('brings the stories tray back when stories are turned on again', () => {
+    // Regression: hiding was one-way for the life of the document. Turning the
+    // switch on re-ran cleanup, which no longer matched — so the tray stayed
+    // hidden until a full reload, and stories looked broken.
+    cleanup();
+    const tray = document.querySelector('#stories > div') as HTMLElement;
+    expect(tray.getAttribute('data-di-removed')).toBe('stories');
+
+    settings = { ...DEFAULT_SETTINGS, allowStories: true };
+    restoreRemovals(document);
+    cleanup();
+
+    expect(tray.hasAttribute('data-di-removed')).toBe(false);
+    expect(tray.style.getPropertyValue('display')).toBe('');
+  });
+
+  it('restores the inline display value Instagram had before we hid it', () => {
+    const tray = document.querySelector('#stories > div') as HTMLElement;
+    tray.style.setProperty('display', 'flex');
+    cleanup();
+    expect(tray.style.getPropertyValue('display')).toBe('none');
+
+    restoreRemovals(document);
+    expect(tray.style.getPropertyValue('display')).toBe('flex');
   });
 });

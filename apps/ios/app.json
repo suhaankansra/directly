@@ -25,7 +25,15 @@
       "package": "com.directly.app",
       "predictiveBackGestureEnabled": false
     },
-    "plugins": [],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "dms",
+          "color": "#6c5ce7"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": false
     }

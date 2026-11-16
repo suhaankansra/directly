@@ -101,6 +101,7 @@ const RESERVED = new Set([
   'saved',
   'popular',
   'topics',
+  'archive',
 ]);
 
 const SITE_ORIGIN = 'https://www.instagram.com';
@@ -237,6 +238,14 @@ export function routeVerdict(rawUrl: string, ctx: RouteContext): Verdict {
       return allow('stories', path);
     }
 
+    // Your own stories archive, linked from your profile. Same switch as any
+    // other story: off means it is not a tap target, on means it opens.
+    case 'archive': {
+      if (seg[1] !== 'stories') return ctx.loggedIn ? block('unknown-route', path) : allow('logged-out', path);
+      if (!ctx.settings.allowStories) return block('stories-disabled', path);
+      return allow('stories-archive', path);
+    }
+
     // ------------------------------------------------------------ allowed
     case 'legal':
     case 'privacy':
@@ -256,6 +265,18 @@ export function routeVerdict(rawUrl: string, ctx: RouteContext): Verdict {
   // `/<username>/` and its tabs. Reserved words already handled above, so a
   // single segment here is a profile.
   if (seg.length === 1) return allow('profile', path);
+  // A profile grid links its tiles as `/<username>/p/<code>/` (and
+  // `/<username>/reel/<code>/` for a reel), not as a bare `/p/<code>/`. Same
+  // rule as the bare forms: one pinned item, anything else is browsing.
+  if (seg.length === 3) {
+    const kind = seg[1]!.toLowerCase();
+    if (kind === 'p' || kind === 'reel' || kind === 'reels') {
+      const code = seg[2]!;
+      if (!reelsAllowed) return block('reels-disabled', path);
+      if (pin !== null && code === pin) return allow('pinned-profile-item', path);
+      return block('not-pinned', path);
+    }
+  }
   if (seg.length === 2) {
     const sub = seg[1]!;
     if (
@@ -342,11 +363,16 @@ export function reelIdForPath(rawUrl: string): string | null {
   }
 
   const seg = decoded.split('/').filter((s) => s.length > 0);
+  const KINDS = new Set(['reel', 'reels', 'p']);
   const first = seg[0]?.toLowerCase();
-  if (first !== 'reel' && first !== 'reels' && first !== 'p') return null;
-  const code = seg[1];
+  // `/p/<code>/` — or the profile-grid shape `/<username>/p/<code>/`, which is
+  // how every tile on a profile is linked.
+  const kind = first && KINDS.has(first) ? first : seg[1]?.toLowerCase();
+  if (!kind || !KINDS.has(kind)) return null;
+  const offset = kind === first ? 1 : 2;
+  const code = seg[offset];
   if (!code) return null;
-  if (first === 'reels' && (code === 'audio' || code === 'audio_track')) return null;
+  if (kind === 'reels' && (code === 'audio' || code === 'audio_track')) return null;
   if (!/^[A-Za-z0-9_-]+$/.test(code)) return null;
   return code;
 }

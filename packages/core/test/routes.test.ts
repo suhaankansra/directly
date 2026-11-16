@@ -112,6 +112,32 @@ describe('reels and posts are conditional on the pin', () => {
     expect(action('/reel/other/', ctx({ pinId: 'Cabc123' }))).toBe('block');
   });
 
+  it('opens the stories archive only when stories are allowed', () => {
+    // It is linked from your own profile, so blocking it with the switch on made
+    // the toggle look broken.
+    expect(routeVerdict('/archive/stories/', ctx())).toMatchObject({
+      action: 'block',
+      reason: 'stories-disabled',
+    });
+    expect(action('/archive/stories/', ctx({ settings: { ...DEFAULT_SETTINGS, allowStories: true } }))).toBe(
+      'allow',
+    );
+  });
+
+  it('treats a profile grid tile as one pinned item, not browsing', () => {
+    const tile = '/alice/p/Cabc123/';
+    expect(routeVerdict(tile, ctx())).toMatchObject({ action: 'block', reason: 'not-pinned' });
+    expect(action(tile, ctx({ pinId: 'Cabc123' }))).toBe('allow');
+    expect(action('/alice/reel/Cabc123/', ctx({ pinId: 'Cabc123' }))).toBe('allow');
+    expect(action('/alice/p/Cother/', ctx({ pinId: 'Cabc123' }))).toBe('block');
+  });
+
+  it('blocks a profile grid tile in strict mode', () => {
+    expect(
+      routeVerdict('/alice/p/Cabc123/', { settings: { ...DEFAULT_SETTINGS, allowReelsFromDms: false }, loggedIn: true }),
+    ).toMatchObject({ action: 'block', reason: 'reels-disabled' });
+  });
+
   it('treats /reels/<code>/ as the same single item when pinned (D019)', () => {
     expect(action('/reels/Cabc123/', ctx({ pinId: 'Cabc123' }))).toBe('allow');
   });
@@ -240,6 +266,15 @@ describe('reelIdForPath', () => {
     expect(reelIdForPath('/reel/Cabc/')).toBe('Cabc');
     expect(reelIdForPath('/reels/Cabc/')).toBe('Cabc');
     expect(reelIdForPath('/p/Cabc/')).toBe('Cabc');
+  });
+
+  it('reads an id from the profile-grid shape Instagram actually links', () => {
+    // Every tile on a profile is `/<username>/p/<code>/`, so a bare-path-only
+    // reader never armed a pin there and the grid stayed hidden.
+    expect(reelIdForPath('/alice/p/Cabc/')).toBe('Cabc');
+    expect(reelIdForPath('/alice/reel/Cabc/')).toBe('Cabc');
+    expect(reelIdForPath('/alice/reels/Cabc/')).toBe('Cabc');
+    expect(reelIdForPath('/alice/tagged/')).toBeNull();
   });
 
   it('returns null for the tab, audio and non-media routes', () => {

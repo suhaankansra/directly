@@ -50,7 +50,7 @@ they are pushed and pulled, so the two trees drift silently.
 ## Commands
 
 ```bash
-pnpm --filter @directly/core test        # 130 tests, jsdom, no network
+pnpm --filter @directly/core test        # 150 tests, jsdom, no network
 pnpm build:core                          # -> packages/core/dist/inpage.js
 cd apps/ios && pnpm prebuild             # regenerate src/lib/injectedScript.ts
 cd apps/ios && pnpm typecheck

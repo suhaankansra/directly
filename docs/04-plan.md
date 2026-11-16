@@ -36,7 +36,7 @@ packages/core/
   src/styles/*.css         theme, hide-chrome, blocked, skeleton
   src/inpage/              guard, reelLock, cleanup, navBar, observer, toast, boot
   src/inpage/standalone.ts self-booting entry used by the WebView
-  test/                    120 tests + fixture server
+  test/                    150 tests + fixture server
 apps/extension/            MV3: content, background, popup/options, two manifests
 apps/ios/                  Expo app: App.tsx, IgWebView, TabBar, LockScreen, bridge
 apps/web/                  static landing/help/privacy + tiny local server

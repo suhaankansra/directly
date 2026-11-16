@@ -12,9 +12,16 @@ import {
 } from '@directly/core';
 
 import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
+import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
 import { LockScreen } from './src/screens/LockScreen';
-import { loadSettings, saveSettings } from './src/lib/settings';
+import {
+  ensureNotificationPermission,
+  installNotificationHandler,
+  notifyUnread,
+  setUnreadBadge,
+} from './src/lib/notifications';
+import { loadSettings, loadUsername, saveSettings, saveUsername } from './src/lib/settings';
 import { colors, radius, spacing } from './src/theme';
 
 const VERSION = '0.1.0';
@@ -34,18 +41,49 @@ function Shell() {
   const [toast, setToast] = useState<string | null>(null);
   const [target, setTarget] = useState<{ path: string; nonce: number } | null>(null);
   const [, setLayout] = useState<Layout>('mobile');
+  const [unread, setUnread] = useState(0);
+
+  // Read by `onUnread` without making its identity change on every route — the
+  // WebView keeps the callback in a `useCallback` chain.
+  const unreadRef = useRef(0);
+  const pathRef = useRef<string>(INBOX_PATH);
+  const lockRef = useRef(false);
+  const askedForAlerts = useRef(false);
+  /** The first count of a session is the state of the world, not news. */
+  const hydratedUnread = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
-    void loadSettings().then((loaded) => {
+    void Promise.all([loadSettings(), loadUsername()]).then(([loaded, remembered]) => {
       if (cancelled) return;
       setSettings(loaded);
+      // Only fills the gap until the page reports the account again; a page
+      // report always wins, so signing into another account corrects this.
+      setUsername(remembered);
       setSettingsReady(true);
     });
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    // Registered once, before the first unread count can arrive.
+    installNotificationHandler();
+  }, []);
+
+  useEffect(() => {
+    lockRef.current = lockOpen;
+  }, [lockOpen]);
+
+  useEffect(() => {
+    // Ask for alerts only once there is a session to alert about, and only once:
+    // a refusal is remembered by the OS, so re-asking every launch achieves
+    // nothing except irritation.
+    if (!signedIn || askedForAlerts.current) return;
+    askedForAlerts.current = true;
+    void ensureNotificationPermission();
+  }, [signedIn]);
 
   useEffect(() => {
     if (!toast) return;
@@ -62,6 +100,7 @@ function Shell() {
   );
 
   const onRoute = useCallback((nextPath: string, nextLayout: Layout, _pin: string | null, nextTab: TabId | null) => {
+    pathRef.current = nextPath;
     setPath(nextPath);
     setLayout(nextLayout);
     // The tab bar follows the URL the page reports, not the last thing tapped,
@@ -71,8 +110,32 @@ function Shell() {
   }, [lockOpen]);
 
   const onAccount = useCallback((name: string | null, isSignedIn: boolean) => {
-    setUsername(name);
+    // The page can only name the account when your avatar link is rendered. On a
+    // thread or a story it often is not, and forgetting the name there turned
+    // the Profile tab into a no-op. Keep the last known handle while signed in.
+    setUsername((previous) => {
+      const next = name ?? (isSignedIn ? previous : null);
+      if (next !== previous) void saveUsername(next);
+      return next;
+    });
     setSignedIn(isSignedIn);
+  }, []);
+
+  const onUnread = useCallback((count: number) => {
+    setUnread(count);
+    void setUnreadBadge(count);
+    const previous = unreadRef.current;
+    unreadRef.current = count;
+    if (!hydratedUnread.current) {
+      hydratedUnread.current = true;
+      return;
+    }
+    // Only a rise is news: reading a thread lowers the count, and re-announcing
+    // an unchanged number on every route change would be nagging.
+    if (count <= previous) return;
+    // On the inbox list the new thread is already in front of you.
+    if (!lockRef.current && pathRef.current === INBOX_PATH) return;
+    void notifyUnread(count);
   }, []);
 
   const updateSettings = useCallback((next: Settings) => {
@@ -104,6 +167,9 @@ function Shell() {
     // built at all, and a dependency that will not compile is not worth having.
     setLockOpen(false);
     setTab('inbox');
+    setUnread(0);
+    unreadRef.current = 0;
+    void setUnreadBadge(0);
     try {
       web.current?.clearCache?.(true);
     } catch {
@@ -127,10 +193,12 @@ function Shell() {
   }, [lockOpen, path]);
 
   if (!settingsReady) {
+    // Same surface as a page load: the app should never show a second, different
+    // "starting up" screen before the first one.
     return (
       <View style={styles.boot}>
         <StatusBar style="light" />
-        <View style={styles.bootMark} />
+        <LoadingSurface visible />
       </View>
     );
   }
@@ -146,6 +214,7 @@ function Shell() {
             onRoute={onRoute}
             onBlocked={onBlocked}
             onAccount={onAccount}
+            onUnread={onUnread}
             onLoadingChange={() => undefined}
             navigateTarget={target}
           />
@@ -176,7 +245,7 @@ function Shell() {
         ) : null}
       </View>
 
-      <TabBar active={tab} onSelect={selectTab} bottomInset={insets.bottom} />
+      <TabBar active={tab} onSelect={selectTab} bottomInset={insets.bottom} unread={unread} />
     </View>
   );
 }
@@ -202,15 +271,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: colors.bg,
   },
-  boot: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' },
-  bootMark: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.accentSoft,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.accent,
-  },
+  boot: { flex: 1, backgroundColor: colors.bg },
   toast: {
     position: 'absolute',
     left: spacing.lg,

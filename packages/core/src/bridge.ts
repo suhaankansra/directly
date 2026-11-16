@@ -20,7 +20,10 @@ export type PageMessage =
   | { v: 1; type: 'di:blocked'; path: string; reason: string }
   | { v: 1; type: 'di:live'; layout: Layout }
   | { v: 1; type: 'di:tab'; tab: TabId | null }
-  | { v: 1; type: 'di:account'; username: string | null; signedIn: boolean };
+  | { v: 1; type: 'di:account'; username: string | null; signedIn: boolean }
+  // A count, never a message: the host draws a badge and, while the app is
+  // open, raises a local notification. Nothing about the conversation is sent.
+  | { v: 1; type: 'di:unread'; count: number };
 
 export type HostMessage =
   | { v: 1; type: 'di:settings'; settings: Settings }
@@ -76,6 +79,13 @@ export function parsePageMessage(input: unknown): PageMessage | null {
       const reason = value['reason'];
       if (typeof reason !== 'string' || reason.length > 64) return null;
       return { v: 1, type: 'di:blocked', path, reason };
+    }
+    case 'di:unread': {
+      const count = value['count'];
+      if (typeof count !== 'number' || !Number.isInteger(count) || count < 0 || count > 999) {
+        return null;
+      }
+      return { v: 1, type: 'di:unread', count };
     }
     case 'di:live': {
       const layout = value['layout'];

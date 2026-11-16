@@ -197,10 +197,11 @@ Blocked → **`/direct/inbox/`**, not an interstitial. Reason: the inbox is the 
 
 - **Why both:** Instagram is a single-page app. Most navigation never triggers a document load, so the host hook alone is useless; and a page-level patch alone can be bypassed by a full load from an external link. Neither layer is sufficient.
 - **Message protocol** (`lib/bridge.ts` ↔ `core`):
-  - page → host: `{v:1, type:'di:url', path, layout:'mobile'|'desktop', pinId?:string}`; `{type:'di:blocked', path, reason, selector?}`; `{type:'di:reel_open'| 'di:reel_closed', id}`.
-  - host → page: `{type:'di:settings', settings}`, `{type:'di:navigate', path}`, `{type:'di:pin', id|null}`, `{type:'di:logout'}`.
+  - page → host: `{v:1, type:'di:url', path, layout:'mobile'|'desktop', pinId:string|null}`, `{type:'di:tab', tab}`, `{type:'di:live', layout}`, `{type:'di:blocked', path, reason}`, `{type:'di:account', username:string|null, signedIn}`, `{type:'di:unread', count}`.
+  - host → page: `{type:'di:settings', settings}`, `{type:'di:navigate', path}`, `{type:'di:pin', id:string|null}`.
   - Every message is validated: `v === 1`, a known `type`, `path` must start with `/`, length caps. On iOS the handler checks `message.securityOrigin`-equivalent (WKWebView `window.origin` is not exposed; we gate on the WebView's current `URL` host being `instagram.com`); in the extension, `event.source === window` and `event.origin === location.origin`. Unknown messages are dropped, never `eval`'d, never forwarded.
 - **Native tab sync:** the tab bar highlights from the **reported URL**, not the last tap, so a back-swipe or a deep link updates the UI (Phase 5A §3).
+- **Notifications are local, never push (D031).** A WebView cannot receive web push — service workers do not run inside WKWebView or Android WebView — and native push would require a server holding the Instagram session, which invariant 2 forbids. So the page reports `di:unread`: a *count*, read from Instagram's own link to the inbox. The host badges the DM tab and the app icon, and raises a local notification when the count rises while you are looking at something other than the inbox. No sender, no preview and no message text crosses the bridge, and nothing fires while the app is closed.
 
 ---
 
@@ -226,6 +227,7 @@ All rules are written with `:where()`/low specificity so IG's own styles win in 
 4. `cleanup.ts` — removes banners/upsells; MutationObserver with `requestIdleCallback` batching and a 150 ms trailing debounce.
 5. `navBar.ts` — web only; injected HTML bar, mirrors the native bar, posts `di:navigate`.
 6. `observer.ts` — one shared `MutationObserver` for all of the above, sub-tree, throttled, re-armed on route change; never observes `attributes` globally (too hot).
+7. `unread.ts` — reads the unread DM count off the inbox link's label or badge and posts `di:unread` when it changes; cosmetic, so it fails open to `0`.
 
 ### 6.3 Lifecycle
 

@@ -122,6 +122,23 @@ describe('DM inbox on a phone-width page', () => {
     expect(lastOfType('di:account')).toMatchObject({ username: 'alice', signedIn: true });
   });
 
+  it('reports your own handle from a thread, not the person you are talking to', () => {
+    // Regression: the first single-segment link on a thread is the other
+    // participant, so "guessing" from it made the Profile tab open their
+    // profile instead of yours.
+    document.body.innerHTML = `
+      <main>
+        <header><a href="/bob/" role="link"><img alt="bob's profile picture"></a></header>
+        <a href="/bob/" role="link" id="partner">bob</a>
+      </main>
+      <nav role="navigation">
+        <a href="/direct/inbox/">Messages</a>
+        <a href="/alice/" role="link" id="me"><img alt="alice's profile picture"></a>
+      </nav>`;
+    start('/direct/t/42/');
+    expect(lastOfType('di:account')).toMatchObject({ username: 'alice', signedIn: true });
+  });
+
   it('removes the "Use the app" banner', () => {
     start();
     expect(document.getElementById('usebanner')!.getAttribute('data-di-removed')).toBe('app-banner');

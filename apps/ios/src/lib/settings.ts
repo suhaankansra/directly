@@ -25,3 +25,32 @@ export async function saveSettings(settings: Settings): Promise<void> {
     // Storage failures must not break the app; settings simply revert on relaunch.
   }
 }
+
+/**
+ * The signed-in handle, remembered locally only so the Profile tab has a target.
+ *
+ * Instagram's DM inbox renders no link to your own profile, so on a cold start
+ * the page cannot name the account until you visit a page that does. Storing the
+ * handle the first time it is seen keeps Profile working across launches. It is
+ * a username the page already rendered, never a credential or a cookie.
+ */
+const ACCOUNT_KEY = 'directly.account.v1';
+const HANDLE = /^[A-Za-z0-9._]{1,30}$/;
+
+export async function loadUsername(): Promise<string | null> {
+  try {
+    const raw = await AsyncStorage.getItem(ACCOUNT_KEY);
+    return raw && HANDLE.test(raw) ? raw : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function saveUsername(username: string | null): Promise<void> {
+  try {
+    if (username && HANDLE.test(username)) await AsyncStorage.setItem(ACCOUNT_KEY, username);
+    else if (username === null) await AsyncStorage.removeItem(ACCOUNT_KEY);
+  } catch {
+    // Best effort: the next detected handle is stored again.
+  }
+}
