@@ -152,14 +152,20 @@ AirDropping to a phone. Three routes, easiest first.
    ```
 
    It embeds the profile, takes the entitlements from the profile rather than a guess, signs nested
-   code deepest-first (a framework inside a framework before its container), verifies the result and
-   writes `…-signed.ipa` beside the input. `--dry-run` prints the plan and signs nothing; `--identity`
-   overrides the first codesigning identity in your keychain.
+   code deepest-first (a framework inside a framework before its container), verifies each nested
+   item and then the bundle, and writes `…-signed.ipa` beside the input. It also takes a local `.app`
+   instead of an IPA — the archive that Xcode leaves in `build/Build/Products/Release-iphoneos` when
+   built with `CODE_SIGNING_ALLOWED=NO` — so a build from this machine can be signed without going
+   through the release. `--dry-run` prints the plan and signs nothing; `--identity` overrides the
+   first codesigning identity in your keychain; `--keep` leaves the signed `.app` behind for
+   `ios-deploy` or Xcode.
 
-   Two failures worth recognising, both now caught before the phone is involved: *"not signed with a
-   valid certificate"* means a nested binary kept its old signature, and an app that opens then dies
-   on launch means the profile's UDID list does not include that phone — which re-signing cannot fix,
-   so the script refuses the UDID up front.
+   Three failures worth recognising, all caught before the phone is involved: *"not signed with a
+   valid certificate"* means a nested binary kept its old signature; an app that opens then dies on
+   launch means the profile's UDID list does not include that phone, which re-signing cannot fix; and
+   the same open-then-die with the profile's UDID present means the profile's App ID does not match
+   `com.directly.app`. The script compares the bundle id against the profile's `application-identifier`
+   and refuses an expired profile, so neither of the last two gets as far as an install.
 
 ## 5. Safari Web Extension (iOS + macOS)
 

@@ -118,7 +118,9 @@ tools/resign-ipa.sh ~/Downloads/directly-main-unsigned.ipa \
   --profile ~/Downloads/Directly.mobileprovision   # --device <udid> to install it too
 ```
 
-The release IPA is unsigned, so iOS refuses it until it carries a signature from your own team.
+The release IPA is unsigned, so iOS refuses it until it carries a signature from your own team. The
+script also accepts a local `.app` from an unsigned Xcode build, checks the bundle id and the profile's
+`application-identifier` agree, and refuses an expired profile or an unlisted UDID.
 `docs/11-ship-prep.md` §4 covers the other routes (Sideloadly, AltStore, EAS).
 
 ## How it works in one paragraph
