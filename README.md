@@ -128,7 +128,7 @@ video looped. Blocking fails closed; cosmetic hiding fails open.
 |---|---|
 | [01-teardown.md](docs/01-teardown.md) | the reference recording restated as 36 features, screen map, allowed/blocked table, open questions |
 | [02-architecture.md](docs/02-architecture.md) | why this shape and not seven others, route model, guard, injection plan, reel lock, risks |
-| [03-findings.md](docs/03-findings.md) | verified headers and routes, what the fixture proved, the ten things only you can check |
+| [03-findings.md](docs/03-findings.md) | verified headers and routes, what the fixture proved, the things only you can check |
 | [04-plan.md](docs/04-plan.md) | the build order actually used, and where it deviates from the original plan |
 | [09-test-plan.md](docs/09-test-plan.md) | allowed/blocked acceptance tables with honest pass/device status |
 | [10-review.md](docs/10-review.md) | security and performance review, remote-config design, risk register |

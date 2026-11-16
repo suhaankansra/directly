@@ -81,7 +81,7 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 ## 5. Manual checklist for the things I cannot see
 
 Run this logged in, on a phone and at 1440px, and send back answers (see `03-findings.md` §5 for why
-each one matters). It takes about ten minutes:
+each one matters). It takes about fifteen minutes:
 
 1. Inbox URL shape after tapping a thread.
 2. URL shape of a reel opened from a DM (`/reel/<code>/` vs `/reels/<code>/`).
@@ -91,10 +91,12 @@ each one matters). It takes about ten minutes:
 6. Does the mobile-web "Use the app" banner have a close button?
 7. Is `/accounts/activity/` still the notifications route after login?
 8. Sitting on the Profile tab, when a DM arrives: does the DM tab badge appear, and one alert only (not one per re-render)? Does the count drop when you read the thread?
-9. Turn on Debug logging and open Lock: does “Unread” show a count with a timestamp? “Nothing yet” means Instagram's DM link carries no count in its `aria-label` or as a badge node, and `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge.
-10. Does the profile Reels tab open a grid or a single reel?
-11. Does back from a profile ever land on the feed?
-12. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?
+9. Turn on Debug logging and open Lock: does “Unread” show a count with a timestamp? “Nothing yet” means neither Instagram's DM link, its parent row nor either one's `aria-label` carries a count, so `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge.
+10. With that same Diagnostics card open, tap **Copy diagnostics** and paste it somewhere. The report is version, platform, “signed in as”, the current path and the unread line — nothing about a message. If it pastes empty, the clipboard module did not link.
+11. Compare Directly's DM tab badge against what Instagram itself draws next to the Messages icon (a number, or `99+`). They should agree. A number there and nothing in Directly means the count lives somewhere other than the link, its subtree or its parent row — that markup is the finding to send back.
+12. Does the profile Reels tab open a grid or a single reel?
+13. Does back from a profile ever land on the feed?
+14. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?
 
 ## 6. Unit-test map
 

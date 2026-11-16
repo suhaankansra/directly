@@ -220,7 +220,7 @@ upload.
 - [x] Replace both "Contact" placeholders — both privacy pages point at the repo issue tracker
 - [x] Decide whether `tabs` can be dropped from the extension manifest — dropped; only `tabs.update()`/`onRemoved` are used, which need no permission
 - [x] Minify the in-page bundle for release — `DIRECTLY_MINIFY=1 pnpm build:core` in `release.yml`; dev builds stay readable
-- [ ] Run the ten-observation checklist in `09-test-plan.md` §5 logged in, on a phone and at 1440px
+- [ ] Run the observation checklist in `09-test-plan.md` §5 logged in, on a phone and at 1440px
 - [ ] Confirm R1 (WKWebView login) on a real device before spending time on App Store assets
 - [ ] Regenerate icons if the brand changes: `node tools/make-icons.mjs`
 - [x] Add `eas.json` and a real bundle id — `apps/ios/eas.json` is committed; `com.directly.app` on both platforms
