@@ -1,6 +1,6 @@
 # 09 — Test plan and acceptance
 
-Legend: **PASS (auto)** = covered by `pnpm test` (150 tests). **PASS (browser)** = verified in
+Legend: **PASS (auto)** = covered by `pnpm test` (167 tests). **PASS (browser)** = verified in
 Chromium against the local fixture (`packages/core/test/fixtures/serve.mjs`). **DEVICE** = needs your
 phone or laptop, because it needs a real Instagram session. **N/A** = surface does not exist yet.
 
@@ -9,7 +9,7 @@ phone or laptop, because it needs a real Instagram session. **N/A** = surface do
 ```bash
 pnpm install
 pnpm build            # core → extension → web
-pnpm test             # 150 core tests
+pnpm test             # 167 core tests
 pnpm typecheck        # core, extension, web
 cd apps/ios && npm install && npx expo run:ios     # the iOS app
 node packages/core/test/fixtures/serve.mjs         # fixture :4319
@@ -80,23 +80,30 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 
 ## 5. Manual checklist for the things I cannot see
 
-Run this logged in, on a phone and at 1440px, and send back answers (see `03-findings.md` §5 for why
-each one matters). It takes about fifteen minutes:
+Run this logged in, on a phone and at 1440px. About fifteen minutes. The right-hand column is the
+point: a bare “works” cannot change a selector, but a path or a pasted report can. `03-findings.md`
+§5 has the reasoning behind the older ones.
 
-1. Inbox URL shape after tapping a thread.
-2. URL shape of a reel opened from a DM (`/reel/<code>/` vs `/reels/<code>/`).
-3. Does swiping up in that reel change the URL?
-4. Does the desktop sidebar use real `href` links for Explore/Reels?
-5. Do `j`/`k` and the up/down chevrons work in the desktop reel modal?
-6. Does the mobile-web "Use the app" banner have a close button?
-7. Is `/accounts/activity/` still the notifications route after login?
-8. Sitting on the Profile tab, when a DM arrives: does the DM tab badge appear, and one alert only (not one per re-render)? Does the count drop when you read the thread?
-9. Turn on Debug logging and open Lock: does “Unread” show a count with a timestamp? “Nothing yet” means neither Instagram's DM link, its parent row nor either one's `aria-label` carries a count, so `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge.
-10. With that same Diagnostics card open, tap **Copy diagnostics** and paste it somewhere. The report is version, platform, “signed in as”, the current path and the unread line — nothing about a message. If it pastes empty, the clipboard module did not link.
-11. Compare Directly's DM tab badge against what Instagram itself draws next to the Messages icon (a number, or `99+`). They should agree. A number there and nothing in Directly means the count lives somewhere other than the link, its subtree or its parent row — that markup is the finding to send back.
-12. Does the profile Reels tab open a grid or a single reel?
-13. Does back from a profile ever land on the feed?
-14. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?
+| # | Do this | A complete answer contains |
+|---|---|---|
+| 1 | Tap a thread from the inbox. | The path after the tap — `/direct/t/<id>/`, `/direct/t/<id>`, or neither — and whether the DM tab stayed highlighted. |
+| 2 | From that thread, tap a reel a friend sent. | Whether the path is `/reel/<code>/` or `/reels/<code>/`. |
+| 3 | In that reel, swipe up once. | Whether a second reel appeared (it must not) and whether the path changed when you swiped. |
+| 4 | On the desktop at 1440px, right-click Explore, then Reels in the sidebar. | For each: a copied link URL, or “no link, it is a button” — `href`-based hiding needs real links. |
+| 5 | In the desktop reel modal, press `j`, then `k`, then tap the up and down chevrons. | Which of the four moved to another reel, and whether the path changed each time. |
+| 6 | Open mobile web in Safari, outside the app. | Whether the “Use the app” banner has a close button or only an ✕ that returns, and whether that banner ever appeared inside Directly (it must not). |
+| 7 | Tap the activity (heart) tab. | The path you land on — `/accounts/activity/` or something else. |
+| 8 | Sit on the Profile tab and have someone DM you. | Whether the DM tab badge appeared and what number it showed, how many alerts arrived (one / several / none), and whether the number dropped after you opened and read the thread. |
+| 9 | Turn Debug logging on, then open Lock. | The exact “Unread: …” line. “Nothing yet” means neither the DM link, its parent row, nor either one's `aria-label` carried a count, so `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge. |
+| 10 | On that same card, tap **Copy diagnostics** and paste it into a note. | The pasted report verbatim — five lines: version, platform, signed-in handle, path, unread. Nothing about a message should appear. An empty paste means the clipboard module did not link. |
+| 11 | Compare Directly's DM badge with the count Instagram itself draws next to its Messages icon, same account, in Safari. | Both numbers, or “Instagram shows none”. A number there and nothing in Directly means the count lives somewhere other than the link, its subtree or its parent row — that markup is the finding to send back. |
+| 12 | Open your own profile, then its Reels tab. | Grid or single reel, and the path afterwards. |
+| 13 | From a profile, press back twice. | Where each press lands. The feed is a bug, not a preference. |
+| 14 | Open Stories from the inbox tray (top row). | Whether they open, and whether you can get out without the archive. |
+
+Send the answers as text, with a screenshot of anything surprising; a Debug report on the Lock screen
+covers items 9–11 in one paste. Item 11 is the one that decides whether the unread badge is a real
+feature or a guess.
 
 ## 6. Unit-test map
 

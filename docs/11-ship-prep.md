@@ -118,6 +118,54 @@ TestFlight app → run the device checklist in `09-test-plan.md` §1–3.
 `com.directly.app`). Still needed: a support URL and a privacy-policy URL — the latter is the site's
 `privacy.html`, which needs to be hosted first (`§8`).
 
+### Sideloading the unsigned IPA
+
+The IPA attached to `latest` is built with `CODE_SIGNING_ALLOWED=NO`, so iOS refuses it until it
+carries a signature from a team the device trusts — the download is for handing to a signer, not for
+AirDropping to a phone. Three routes, easiest first.
+
+1. **Sideloadly or AltStore.** Install the tool on a Mac or PC, connect the phone, drag
+   `directly-main-unsigned.ipa` in, enter your Apple ID, choose your team, press Start. Both re-sign
+   with your own free profile. A free account's profile expires after 7 days and the app then refuses
+   to launch until it is signed again; AltStore can refresh it on a schedule, Sideloadly cannot.
+
+2. **Let Expo sign it.** This is the route the rest of this repo assumes, because it needs no IPA:
+
+   ```bash
+   cd apps/ios
+   npx expo prebuild --platform ios --no-install
+   npx expo run:ios --device          # signs with the team in your Xcode account, installs over USB
+   ```
+
+   For a file to give to someone else, `eas build --platform ios --profile preview` builds an
+   internal-distribution IPA with your Apple account and registers the device UDIDs through EAS
+   (`eas device:create`). That is the only route here that produces an IPA which installs on a phone
+   that is not plugged into your machine.
+
+3. **Re-sign by hand** — a paid team with a Development or Ad Hoc profile that already lists the
+   device UDID:
+
+   ```bash
+   rm -rf /tmp/directly-sign && mkdir /tmp/directly-sign && cd /tmp/directly-sign
+   unzip -q ~/Downloads/directly-main-unsigned.ipa
+   APP="$(ls -d Payload/*.app | head -1)"          # Payload/Directly.app today, but not a promise
+   cp ~/Library/MobileDevice/Provisioning\ Profiles/<profile>.mobileprovision \
+      "$APP/embedded.mobileprovision"
+
+   # Nested code first: an unsigned framework inside the bundle fails the whole install.
+   for item in "$APP"/Frameworks/*; do
+     codesign -f -s "Apple Development: Your Name (TEAMID)" --generate-entitlement-der "$item"
+   done
+   codesign -f -s "Apple Development: Your Name (TEAMID)" --generate-entitlement-der "$APP"
+
+   zip -qry ../directly-signed.ipa Payload          # -> /tmp/directly-signed.ipa
+   xcrun devicectl device install app --device <UDID> "$APP"
+   ```
+
+   Two failures worth recognising: *"not signed with a valid certificate"* means a nested binary kept
+   its old signature — re-run the loop; the app opening and then dying on launch means the profile's
+   UDID list does not include that phone, which re-signing cannot fix.
+
 ## 5. Safari Web Extension (iOS + macOS)
 
 ```bash

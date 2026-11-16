@@ -80,4 +80,5 @@ injecting the previous script and your change appears to do nothing.
   else has been verified; this needs an authenticated session, which is why it is open.
 - **Confirm the unread count exists at all**: with Debug logging on, the Lock screen says
   whether the page ever reported one, or that no inbox link was found.
-- The release IPA is unsigned; sideloading requires re-signing with the user's own team.
+- The release IPA is unsigned; sideloading requires re-signing with the user's own team
+  (`docs/11-ship-prep.md` §4 has the three routes).
