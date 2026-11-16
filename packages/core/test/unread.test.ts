@@ -52,6 +52,55 @@ describe('readUnread', () => {
     expect(readUnread(doc, MOBILE)).toBe(0);
   });
 
+  it('reads a badge that sits next to the link instead of inside it', () => {
+    // Regression: Instagram renders the count as the link's sibling in the row.
+    // Searching only the link's subtree reported 0, which the host reads as
+    // "nothing unread" — so the badge flickered off while messages were waiting.
+    const doc = docWith(`
+      <nav role="navigation">
+        <div id="row"><a href="/direct/inbox/"><svg></svg></a><span>3</span></div>
+      </nav>`);
+    expect(readUnread(doc, MOBILE)).toBe(3);
+  });
+
+  it('does not borrow a count from a container that also holds a conversation', () => {
+    // The fallback must not turn into "read whatever number is nearby": here the
+    // only count belongs to a thread row, so the honest answer is 0.
+    const doc = docWith(`
+      <nav role="navigation">
+        <a href="/direct/inbox/"><svg></svg></a>
+        <a href="/direct/t/1/">alice<span>4</span></a>
+      </nav>`);
+    expect(readUnread(doc, MOBILE)).toBe(0);
+  });
+
+  it('does not borrow a count from a container holding a composer', () => {
+    const doc = docWith(`
+      <div role="navigation">
+        <a href="/direct/inbox/"><svg></svg></a>
+        <span>9</span>
+        <div role="textbox" contenteditable="true"></div>
+      </div>`);
+    expect(readUnread(doc, MOBILE)).toBe(0);
+  });
+
+  it('finds an inbox entry that is not an anchor', () => {
+    // The href candidate list can miss entirely if the entry becomes a role=link
+    // node; the label tier still identifies it, and the badge inside it counts.
+    const doc = docWith(
+      '<div role="link" aria-label="Direct messaging"><div><span>4</span></div></div>',
+    );
+    expect(readUnread(doc, MOBILE)).toBe(4);
+  });
+
+  it('reads the count from the parent row label', () => {
+    const doc = docWith(`
+      <div aria-label="Direct messaging, 6 unread">
+        <a href="/direct/inbox/"><svg></svg></a>
+      </div>`);
+    expect(readUnread(doc, MOBILE)).toBe(6);
+  });
+
   it('reads the desktop sidebar link', () => {
     const doc = docWith('<nav role="navigation"><a href="/direct/inbox/" aria-label="Direct messaging, 5 unread"></a></nav>');
     expect(readUnread(doc, new SelectorResolver('desktop'))).toBe(5);

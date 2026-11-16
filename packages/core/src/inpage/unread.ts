@@ -41,6 +41,14 @@ function fromBadgeText(el: Element): number | null {
   return /^\d{1,3}\+?$/.test(text) ? toCount(text) : null;
 }
 
+/**
+ * Anything that means "this container is part of a conversation": a thread row,
+ * a composer or a text field. A container holding one of these is never searched
+ * for a badge, so the single number we publish can only ever be the inbox's.
+ */
+const CONVERSATION =
+  "a[href*='/direct/t/'], input, textarea, [contenteditable='true'], [role='textbox']";
+
 function inboxLink(doc: Document, resolver: SelectorResolver): Element | null {
   try {
     const direct = doc.querySelector("a[href='/direct/inbox/']");
@@ -51,22 +59,47 @@ function inboxLink(doc: Document, resolver: SelectorResolver): Element | null {
   return resolver.one(doc, 'dmInbox');
 }
 
+/** The count from a label, on the element itself or anything inside it. */
+function countIn(scope: Element): number | null {
+  for (const el of [scope, ...Array.from(scope.querySelectorAll('[aria-label]'))]) {
+    const count = fromLabel(el.getAttribute('aria-label') ?? '');
+    if (count !== null) return count;
+  }
+  return null;
+}
+
+/** A rendered badge anywhere inside `scope`. */
+function badgeIn(scope: Element): number | null {
+  for (const el of Array.from(scope.querySelectorAll('span, div, b, strong'))) {
+    const count = fromBadgeText(el);
+    if (count !== null) return count;
+  }
+  return null;
+}
+
 export function readUnread(doc: Document, resolver: SelectorResolver): number | null {
   const anchor = inboxLink(doc, resolver);
   if (!anchor) return null;
 
+  // The link, plus its parent row. Instagram does not always put the badge
+  // *inside* the inbox link — sometimes it is the next node along — and a
+  // subtree-only search reported 0 as soon as that happened, which the host
+  // reads as "nothing unread" and clears the badge with. The climb is one level
+  // only, and stops at anything that looks like a conversation.
+  const scopes: Element[] = [anchor];
+  const parent = anchor.parentElement;
+  if (parent && !parent.querySelector(CONVERSATION)) scopes.push(parent);
+
   // The label is the most stable source: Instagram puts the count there for
   // screen readers, so it survives a restyle of the badge itself.
-  const labelled = [anchor, ...Array.from(anchor.querySelectorAll('[aria-label]'))];
-  for (const el of labelled) {
-    const count = fromLabel(el.getAttribute('aria-label') ?? '');
+  for (const scope of scopes) {
+    const count = countIn(scope);
     if (count !== null) return count;
   }
 
-  // Otherwise a rendered badge. Scoped to the inbox link's own subtree, so this
-  // can only ever read the DM count — never a conversation.
-  for (const el of Array.from(anchor.querySelectorAll('span, div, b, strong'))) {
-    const count = fromBadgeText(el);
+  // Otherwise a rendered badge, still confined to those scopes.
+  for (const scope of scopes) {
+    const count = badgeIn(scope);
     if (count !== null) return count;
   }
 

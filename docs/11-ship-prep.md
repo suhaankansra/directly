@@ -182,7 +182,39 @@ cd apps/web && pnpm build          # → apps/web/dist
 - Contact, on both privacy pages, is the repo's issue tracker rather than an address — there is no
   mailbox behind this project, and a dead `support@` would be worse than a working link.
 
-## 9. Pre-submission checklist
+## 9. Rolling `latest` release
+
+`.github/workflows/release.yml` builds on a tag push and on manual dispatch. A dispatch
+ignores the ref name and publishes the rolling prerelease `latest` with both artifacts,
+`directly-main.apk` and `directly-main-unsigned.ipa`:
+
+```bash
+gh workflow run release.yml --ref main   # build, then publish `latest`
+gh run watch                             # APK ~12 min, then iOS, then publish
+gh release view latest --json tagName,targetCommitish,assets
+```
+
+The publish job carries one non-obvious step, and it exists because of a GitHub
+behaviour: an existing release is never re-pointed. `gh release create --target` runs only
+when the release does not exist yet, and `gh release upload --clobber` replaces the files
+without moving the tag. A rolling release therefore drifts — `latest` sat on `b04dafc`
+while its downloads were built from a later commit, so the tag named code that was not in
+the binaries. The job now moves the ref and the metadata itself:
+
+```bash
+git tag -f latest "$GITHUB_SHA"
+git push --force origin refs/tags/latest
+gh api -X PATCH "repos/$GITHUB_REPOSITORY/releases/$release_id" \
+  -f target_commitish="$GITHUB_SHA"
+```
+
+The force-push is only ever `latest`, never a version tag, and the metadata patch is
+allowed to fail: the files are already uploaded by that point, so a metadata hiccup must
+not fail a release. After a dispatch, the tag, `targetCommitish` and both assets should
+all name the same commit. If the tag moved and the files did not, the run died before the
+upload.
+
+## 10. Pre-submission checklist
 
 - [ ] Replace `directly@example.com` in the Firefox manifest with a real add-on id
 - [x] Replace both "Contact" placeholders — both privacy pages point at the repo issue tracker

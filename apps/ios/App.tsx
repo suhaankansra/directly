@@ -232,6 +232,7 @@ function Shell() {
               signedIn={signedIn}
               unread={unread}
               unreadAt={unreadAt}
+              path={path}
               onChange={updateSettings}
               onOpenProfile={() => {
                 setLockOpen(false);

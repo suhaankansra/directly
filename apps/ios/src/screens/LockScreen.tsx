@@ -1,5 +1,6 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import type { Settings } from '@directly/core';
 
 import { colors, radius, spacing } from '../theme';
@@ -13,6 +14,8 @@ type Props = {
   unread: number;
   /** When that count arrived, or null if the page has never reported one. */
   unreadAt: number | null;
+  /** The route the page is on, so a copied report says where it went wrong. */
+  path: string;
   onChange: (next: Settings) => void;
   onOpenProfile: () => void;
   onSignOut: () => void;
@@ -54,11 +57,41 @@ export function LockScreen({
   signedIn,
   unread,
   unreadAt,
+  path,
   onChange,
   onOpenProfile,
   onSignOut,
   version,
 }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 2000);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  // Deliberately the same facts the card shows: no message, no cookie, no
+  // credential. Copying is how these get off a phone that has no console.
+  const report = [
+    `Directly ${version}`,
+    `platform ${Platform.OS}`,
+    signedIn ? `signed in as @${username ?? 'unknown'}` : 'not signed in',
+    `path ${path}`,
+    unreadAt === null
+      ? 'unread unknown - no inbox link was read'
+      : `unread ${unread} (read ${new Date(unreadAt).toISOString()})`,
+  ].join('\n');
+
+  const copyReport = useCallback(async () => {
+    try {
+      await Clipboard.setStringAsync(report);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }, [report]);
+
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Lock</Text>
@@ -126,6 +159,14 @@ export function LockScreen({
             Shown only while Debug logging is on. A count of 0 with a timestamp means the inbox link
             was found and had no badge; “nothing yet” means the selector never matched.
           </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Copy diagnostics"
+            onPress={() => void copyReport()}
+            style={({ pressed }) => [styles.copyButton, pressed && styles.pressed]}
+          >
+            <Text style={styles.buttonText}>{copied ? 'Copied' : 'Copy diagnostics'}</Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -183,6 +224,14 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 13.5 },
   buttonGhostText: { color: colors.text },
   pressed: { opacity: 0.75 },
+  copyButton: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
+    backgroundColor: colors.accent,
+    borderRadius: radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 10 },
   rowDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   rowText: { flex: 1, gap: 2 },
