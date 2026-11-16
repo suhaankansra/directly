@@ -70,12 +70,14 @@ injecting the previous script and your change appears to do nothing.
 - Metro runs on 8081; an Android debug app needs `adb reverse tcp:8081 tcp:8081`.
 - `normalizePath()` strips the trailing slash: `/direct/inbox/` becomes `/direct/inbox`.
   Message paths and tests use the stripped form.
-- The release tag `latest` still points at an older commit while its assets are built
-  from the newest — `gh release upload --clobber` does not move the tag.
+- `gh release upload --clobber` never moves a tag, and `gh release create` is a no-op once
+  the release exists, so the publish job force-updates `refs/tags/latest` itself. Without
+  that, a rolling release's downloads disagree with the commit it names.
 
 ## Open items
 
 - **Verify DMs signed-in** on a real device (inbox, open thread, send, back). Everything
   else has been verified; this needs an authenticated session, which is why it is open.
-- Move the `latest` tag to the current `main` commit so the pointer matches the binaries.
+- **Confirm the unread count exists at all**: with Debug logging on, the Lock screen says
+  whether the page ever reported one, or that no inbox link was found.
 - The release IPA is unsigned; sideloading requires re-signing with the user's own team.

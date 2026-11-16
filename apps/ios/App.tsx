@@ -42,6 +42,9 @@ function Shell() {
   const [target, setTarget] = useState<{ path: string; nonce: number } | null>(null);
   const [, setLayout] = useState<Layout>('mobile');
   const [unread, setUnread] = useState(0);
+  // When the count last arrived, so the Lock screen can say whether the page has
+  // ever exposed it — the difference between "no messages" and "no badge found".
+  const [unreadAt, setUnreadAt] = useState<number | null>(null);
 
   // Read by `onUnread` without making its identity change on every route — the
   // WebView keeps the callback in a `useCallback` chain.
@@ -123,6 +126,7 @@ function Shell() {
 
   const onUnread = useCallback((count: number) => {
     setUnread(count);
+    setUnreadAt(Date.now());
     void setUnreadBadge(count);
     const previous = unreadRef.current;
     unreadRef.current = count;
@@ -226,6 +230,8 @@ function Shell() {
               settings={settings}
               username={username}
               signedIn={signedIn}
+              unread={unread}
+              unreadAt={unreadAt}
               onChange={updateSettings}
               onOpenProfile={() => {
                 setLockOpen(false);

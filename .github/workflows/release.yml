@@ -209,5 +209,13 @@ jobs:
 
           gh release upload "${TAG}" dist/*.apk dist/*.ipa --clobber
 
+          # `gh release upload` never moves a tag, and `gh release create` is a
+          # no-op once the release exists. A rolling `latest` has to point at the
+          # commit its binaries came from, or the downloads disagree with the tag.
+          if [ "${TAG}" = "latest" ]; then
+            git tag -f latest "${GITHUB_SHA}"
+            git push --force origin "refs/tags/latest"
+          fi
+
           echo "### Release ${TAG}" >> "${GITHUB_STEP_SUMMARY}"
           echo "https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}" >> "${GITHUB_STEP_SUMMARY}"

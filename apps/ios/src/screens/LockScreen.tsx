@@ -9,6 +9,10 @@ type Props = {
   username: string | null;
   /** Whether a session exists in the web view — not the same as knowing the name. */
   signedIn: boolean;
+  /** Last unread count the page reported; 0 until one arrives. */
+  unread: number;
+  /** When that count arrived, or null if the page has never reported one. */
+  unreadAt: number | null;
   onChange: (next: Settings) => void;
   onOpenProfile: () => void;
   onSignOut: () => void;
@@ -44,7 +48,17 @@ const ROWS: Row[] = [
   },
 ];
 
-export function LockScreen({ settings, username, signedIn, onChange, onOpenProfile, onSignOut, version }: Props) {
+export function LockScreen({
+  settings,
+  username,
+  signedIn,
+  unread,
+  unreadAt,
+  onChange,
+  onOpenProfile,
+  onSignOut,
+  version,
+}: Props) {
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Lock</Text>
@@ -99,6 +113,21 @@ export function LockScreen({ settings, username, signedIn, onChange, onOpenProfi
           </View>
         ))}
       </View>
+
+      {settings.debug ? (
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Diagnostics</Text>
+          <Text style={styles.note}>
+            {unreadAt === null
+              ? 'Unread: nothing yet — no inbox link has been read on this page.'
+              : `Unread: ${unread}, last read ${new Date(unreadAt).toLocaleTimeString()}.`}
+          </Text>
+          <Text style={styles.note}>
+            Shown only while Debug logging is on. A count of 0 with a timestamp means the inbox link
+            was found and had no badge; “nothing yet” means the selector never matched.
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Privacy</Text>

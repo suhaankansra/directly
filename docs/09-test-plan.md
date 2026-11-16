@@ -78,7 +78,7 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 | R10 | Notification permission refused → no alerts, everything else unchanged | PASS (code: every call is permission-gated and try/catch) |
 | R11 | Unread count message cannot carry content: only an integer 0–999 survives validation | PASS (auto: `di:unread` drops strings, negatives, fractions and extra fields) |
 
-## 5. Manual checklist for the ten things I cannot see
+## 5. Manual checklist for the things I cannot see
 
 Run this logged in, on a phone and at 1440px, and send back answers (see `03-findings.md` §5 for why
 each one matters). It takes about ten minutes:
@@ -91,10 +91,10 @@ each one matters). It takes about ten minutes:
 6. Does the mobile-web "Use the app" banner have a close button?
 7. Is `/accounts/activity/` still the notifications route after login?
 8. Sitting on the Profile tab, when a DM arrives: does the DM tab badge appear, and one alert only (not one per re-render)? Does the count drop when you read the thread?
-9. Does Instagram's DM link carry an unread count in its `aria-label` or as a badge node? If neither, `unread.ts` reads 0 and needs the real markup.
-8. Does the profile Reels tab open a grid or a single reel?
-9. Does back from a profile ever land on the feed?
-10. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?
+9. Turn on Debug logging and open Lock: does “Unread” show a count with a timestamp? “Nothing yet” means Instagram's DM link carries no count in its `aria-label` or as a badge node, and `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge.
+10. Does the profile Reels tab open a grid or a single reel?
+11. Does back from a profile ever land on the feed?
+12. Do Stories open from the inbox tray (top row), and is that tap surface as endless as it looks?
 
 ## 6. Unit-test map
 
