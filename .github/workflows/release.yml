@@ -215,6 +215,16 @@ jobs:
           if [ "${TAG}" = "latest" ]; then
             git tag -f latest "${GITHUB_SHA}"
             git push --force origin "refs/tags/latest"
+
+            # The release's own target_commitish is set once, at creation, and the
+            # push above does not move it. Cosmetic, so a hiccup here must not
+            # fail a release whose files have already uploaded.
+            release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq .id)" || release_id=""
+            if [ -n "${release_id}" ]; then
+              gh api -X PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+                -f target_commitish="${GITHUB_SHA}" > /dev/null \
+                || echo 'could not update release metadata'
+            fi
           fi
 
           echo "### Release ${TAG}" >> "${GITHUB_STEP_SUMMARY}"
