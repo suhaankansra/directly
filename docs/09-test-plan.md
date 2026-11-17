@@ -115,3 +115,18 @@ feature or a guess.
 | `test/cleanup.test.ts` | IG nav hidden, banners removed, blocked links hidden, stories gating, idempotence |
 | `test/host.test.ts` | host-layer decisions incl. deep-link block and strict mode |
 | `test/protocol.test.ts` | settings coercion, page/host message validation |
+
+## 7. Build log — checks run against downloaded artifacts
+
+Rows in §1–§3 stay DEVICE until someone runs them on a phone. This table records the other half: what
+was verifiable on the published files themselves, downloaded from the release rather than rebuilt
+locally.
+
+| Date | Build | Checked | Result |
+|---|---|---|---|
+| 2026-11-17 | `v0.1.0`, CI build from `26eb582` | APK signature (`apksigner verify --print-certs`) and manifest | PASS — v2 scheme, one signer, `CN=Android Debug` (sideloadable, not a Play upload key); `com.directly.app`, 0.1.0, versionCode 1, targetSdk 36 |
+| 2026-11-17 | same | IPA is a device build and is unsigned, as advertised | PASS — `arm64` non-fat, 0.1.0, `com.directly.app`, no `embedded.mobileprovision`, `codesign` reports "code object is not signed at all" |
+| 2026-11-17 | same | `tools/resign-ipa.sh` on that IPA, ad-hoc | PASS — nested frameworks signed deepest-first, each verified, then the repackaged IPA re-extracted and passed `codesign --verify --deep --strict`; entitlements and profile embedded |
+| 2026-11-17 | same | signer refusals: wrong bundle id, expired profile, unlisted UDID, identity from another team | PASS — exit 1, each message naming the mismatch |
+| 2026-11-17 | `v0.2.0` (tree only, not yet built) | version bump: `version` 0.2.0, iOS `buildNumber` 2, Android `versionCode` 2 | — awaiting a tag to produce the artifacts |
+| — | — | Install on a physical iPhone and Android phone, then §1 and §5 | OPEN — needs the device and a signed-in Instagram session |
