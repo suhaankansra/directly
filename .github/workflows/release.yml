@@ -195,17 +195,33 @@ jobs:
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
             TAG="latest"
             TITLE="Latest build"
-            NOTES="Built from ${GITHUB_SHA} on $(date -u +%Y-%m-%d). The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install."
             PRE="--prerelease"
           else
             TAG="${GITHUB_REF_NAME}"
             TITLE="Directly ${TAG}"
-            NOTES="Built from ${GITHUB_SHA}. The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install."
             PRE=""
           fi
 
+          # Notes live in the repo, at docs/releases/<tag>.md, so the text a version
+          # was announced with is reviewable in the same tree as the code instead of
+          # being pasted into a web form once and lost. A rolling `latest` has no such
+          # file — it is a different build each time — so its note is generated.
+          NOTES_FILE="docs/releases/${TAG}.md"
+          if [ -f "${NOTES_FILE}" ]; then
+            echo "notes: ${NOTES_FILE}"
+          else
+            NOTES_FILE="$(mktemp)"
+            printf 'Built from %s on %s. The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install.\n' \
+              "${GITHUB_SHA}" "$(date -u +%Y-%m-%d)" > "${NOTES_FILE}"
+          fi
+
           gh release view "${TAG}" > /dev/null 2>&1 || \
-            gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${TITLE}" --notes "${NOTES}" ${PRE}
+            gh release create "${TAG}" --target "${GITHUB_SHA}" --title "${TITLE}" --notes-file "${NOTES_FILE}" ${PRE}
+
+          # An existing release keeps its old body otherwise — which is how `latest`
+          # would go on describing a build it no longer carries.
+          gh release edit "${TAG}" --notes-file "${NOTES_FILE}" > /dev/null \
+            || echo 'could not update the release notes'
 
           gh release upload "${TAG}" dist/*.apk dist/*.ipa --clobber
 

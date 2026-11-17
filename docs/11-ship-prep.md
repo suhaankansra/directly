@@ -263,6 +263,22 @@ not fail a release. After a dispatch, the tag, `targetCommitish` and both assets
 all name the same commit. If the tag moved and the files did not, the run died before the
 upload.
 
+### Release notes
+
+The body of a versioned release is `docs/releases/<tag>.md`, so the text a version was
+announced with is reviewable in the same tree as the code it describes. Write the file
+before pushing the tag:
+
+```bash
+$EDITOR docs/releases/v0.2.0.md
+```
+
+If the file is missing, the job falls back to one generated line naming the commit and
+the signing state — that is what `latest` gets, since it is a different build every time.
+The job also runs `gh release edit --notes-file` unconditionally: a release that already
+exists keeps whatever body it was created with, so without that step `latest` would go on
+describing a build it no longer carries.
+
 ## 10. Pre-submission checklist
 
 - [ ] Replace `directly@example.com` in the Firefox manifest with a real add-on id
