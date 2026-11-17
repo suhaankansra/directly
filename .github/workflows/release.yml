@@ -209,10 +209,15 @@ jobs:
           NOTES_FILE="docs/releases/${TAG}.md"
           if [ -f "${NOTES_FILE}" ]; then
             echo "notes: ${NOTES_FILE}"
-          else
+          elif [ "${TAG}" = "latest" ]; then
             NOTES_FILE="$(mktemp)"
             printf 'Built from %s on %s. The APK installs directly; the IPA is unsigned, so it needs re-signing before it will install.\n' \
               "${GITHUB_SHA}" "$(date -u +%Y-%m-%d)" > "${NOTES_FILE}"
+          else
+            # A versioned release is announced once and read later; a one-line
+            # placeholder under the download links is worse than a red build.
+            echo "::error::no release notes at ${NOTES_FILE} — write the file before pushing ${TAG}."
+            exit 1
           fi
 
           gh release view "${TAG}" > /dev/null 2>&1 || \

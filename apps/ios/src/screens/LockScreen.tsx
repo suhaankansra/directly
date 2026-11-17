@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import type { Settings } from '@directly/core';
@@ -65,11 +65,35 @@ export function LockScreen({
 }: Props) {
   const [copied, setCopied] = useState(false);
 
+  // Five taps on the version footer. Nothing is stored and nothing unlocks: the
+  // app has no feed, no account and no server, so the only reward it can offer is
+  // saying so. Bounded on both ends — a tap cluster expires after a second, and the
+  // line goes away again — because a permanent extra row would just be clutter.
+  const taps = useRef<{ count: number; at: number }>({ count: 0, at: 0 });
+  const [easterEgg, setEasterEgg] = useState(false);
+
   useEffect(() => {
     if (!copied) return;
     const timer = setTimeout(() => setCopied(false), 2000);
     return () => clearTimeout(timer);
   }, [copied]);
+
+  useEffect(() => {
+    if (!easterEgg) return;
+    const timer = setTimeout(() => setEasterEgg(false), 6000);
+    return () => clearTimeout(timer);
+  }, [easterEgg]);
+
+  const onVersionTap = useCallback(() => {
+    const now = Date.now();
+    const previous = taps.current;
+    const count = now - previous.at < 1000 ? previous.count + 1 : 1;
+    taps.current = { count, at: now };
+    if (count >= 5) {
+      taps.current = { count: 0, at: 0 };
+      setEasterEgg(true);
+    }
+  }, []);
 
   // Deliberately the same facts the card shows: no message, no cookie, no
   // credential. Copying is how these get off a phone that has no console.
@@ -179,7 +203,12 @@ export function LockScreen({
         </Text>
       </View>
 
-      <Text style={styles.version}>Directly {version}</Text>
+      <Pressable onPress={onVersionTap} hitSlop={12} style={styles.versionTarget}>
+        <Text style={styles.version}>Directly {version}</Text>
+        {easterEgg ? (
+          <Text style={styles.easterEgg}>No feed down here either.</Text>
+        ) : null}
+      </Pressable>
     </ScrollView>
   );
 }
@@ -236,5 +265,7 @@ const styles = StyleSheet.create({
   rowDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   rowText: { flex: 1, gap: 2 },
   rowTitle: { color: colors.text, fontSize: 14.5, fontWeight: '600' },
-  version: { color: colors.muted, fontSize: 11.5, textAlign: 'center', marginTop: spacing.sm },
+  versionTarget: { alignItems: 'center', marginTop: spacing.sm },
+  version: { color: colors.muted, fontSize: 11.5, textAlign: 'center' },
+  easterEgg: { color: colors.accent, fontSize: 11.5, textAlign: 'center', marginTop: 2 },
 });

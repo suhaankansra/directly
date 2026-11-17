@@ -11,6 +11,7 @@ import {
   type TabId,
 } from '@directly/core';
 
+import appConfig from './app.json';
 import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
 import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
@@ -24,7 +25,10 @@ import {
 import { loadSettings, loadUsername, saveSettings, saveUsername } from './src/lib/settings';
 import { colors, radius, spacing } from './src/theme';
 
-const VERSION = '0.1.0';
+// Read from app.json rather than typed here: the copy in this file said 0.1.0 for
+// two releases, and the Lock screen's diagnostics report is the one place a stale
+// version is actually harmful.
+const VERSION: string = appConfig.expo.version;
 const BLOCK_TOAST = 'Directly — that isn’t here';
 
 function Shell() {

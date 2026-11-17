@@ -2,7 +2,7 @@
   "expo": {
     "name": "Directly",
     "slug": "directly",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "directly",
@@ -16,7 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.directly.app",
-      "buildNumber": "2",
+      "buildNumber": "3",
       "requireFullScreen": false,
       "infoPlist": {
         "UIViewControllerBasedStatusBarAppearance": true
@@ -24,7 +24,7 @@
     },
     "android": {
       "package": "com.directly.app",
-      "versionCode": 2,
+      "versionCode": 3,
       "predictiveBackGestureEnabled": false
     },
     "plugins": [

@@ -273,8 +273,12 @@ before pushing the tag:
 $EDITOR docs/releases/v0.2.0.md
 ```
 
-If the file is missing, the job falls back to one generated line naming the commit and
-the signing state — that is what `latest` gets, since it is a different build every time.
+If the file is missing, a rolling `latest` falls back to one generated line naming the commit
+and the signing state, since it is a different build every time. A version tag does not: the
+publish job fails with an annotation rather than put a placeholder under the download links.
+That check sits in `publish`, so it is discovered after both builds — writing the file first,
+or running `gh workflow run release.yml` to dry-run the pipeline, is cheaper than the forty
+minutes it costs to find out.
 The job also runs `gh release edit --notes-file` unconditionally: a release that already
 exists keeps whatever body it was created with, so without that step `latest` would go on
 describing a build it no longer carries.
