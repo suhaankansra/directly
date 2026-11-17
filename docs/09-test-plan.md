@@ -128,5 +128,5 @@ locally.
 | 2026-11-17 | same | IPA is a device build and is unsigned, as advertised | PASS — `arm64` non-fat, 0.1.0, `com.directly.app`, no `embedded.mobileprovision`, `codesign` reports "code object is not signed at all" |
 | 2026-11-17 | same | `tools/resign-ipa.sh` on that IPA, ad-hoc | PASS — nested frameworks signed deepest-first, each verified, then the repackaged IPA re-extracted and passed `codesign --verify --deep --strict`; entitlements and profile embedded |
 | 2026-11-17 | same | signer refusals: wrong bundle id, expired profile, unlisted UDID, identity from another team | PASS — exit 1, each message naming the mismatch |
-| 2026-11-17 | `v0.2.0` (tree only, not yet built) | version bump: `version` 0.2.0, iOS `buildNumber` 2, Android `versionCode` 2 | — awaiting a tag to produce the artifacts |
+| 2026-11-17 | `v0.2.0`, CI build from `a21af6c` | the version bump reaches both artifacts | PASS — IPA 0.2.0 / build 2, APK versionName 0.2.0 / versionCode 2, both `com.directly.app`; APK still signed v2, IPA still `arm64` and unsigned |
 | — | — | Install on a physical iPhone and Android phone, then §1 and §5 | OPEN — needs the device and a signed-in Instagram session |
