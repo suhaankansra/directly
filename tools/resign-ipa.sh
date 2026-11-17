@@ -199,6 +199,14 @@ if [ -z "$IDENTITY" ]; then
 fi
 [ -n "$IDENTITY" ] || die "no codesigning identity found; pass --identity \"Apple Development: Your Name (TEAMID)\""
 
+# Certificates are per team; a signature from another team installs nothing, and
+# the error the phone gives does not say so. The identity name ends in (TEAMID).
+IDENTITY_TEAM="$(printf '%s' "$IDENTITY" | sed -n 's/.*(\([A-Za-z0-9]*\))$/\1/p')"
+if [ -n "$IDENTITY_TEAM" ] && [ "$TEAM" != "unknown" ] && [ "$IDENTITY_TEAM" != "$TEAM" ]; then
+  die "this identity belongs to team ${IDENTITY_TEAM} but the profile is for team ${TEAM}.
+  Use the certificate from the profile's team (or the profile for this certificate)."
+fi
+
 # A profile that lists devices cannot install anywhere else, and no amount of
 # re-signing changes that — so say it here rather than after the app dies.
 if [ -n "$DEVICE" ]; then
