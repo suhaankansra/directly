@@ -129,4 +129,7 @@ locally.
 | 2026-11-17 | same | `tools/resign-ipa.sh` on that IPA, ad-hoc | PASS — nested frameworks signed deepest-first, each verified, then the repackaged IPA re-extracted and passed `codesign --verify --deep --strict`; entitlements and profile embedded |
 | 2026-11-17 | same | signer refusals: wrong bundle id, expired profile, unlisted UDID, identity from another team | PASS — exit 1, each message naming the mismatch |
 | 2026-11-17 | `v0.2.0`, CI build from `a21af6c` | the version bump reaches both artifacts | PASS — IPA 0.2.0 / build 2, APK versionName 0.2.0 / versionCode 2, both `com.directly.app`; APK still signed v2, IPA still `arm64` and unsigned |
+| 2026-11-17 | `v0.2.1`, CI build from `08875f4` | versions, signatures, and that the app code actually shipped | PASS — APK 0.2.1 / versionCode 3, signed v2; IPA 0.2.1 / build 3, `arm64`, unsigned; `main.jsbundle` carries the easter-egg string, so the Lock-screen change is in the binary |
+| 2026-11-17 | same | the version footer no longer lies | PASS (bundle) — `app.json` is bundled (`predictiveBackGestureEnabled` present) and `0.2.1` is in the Metro output; the hardcoded `0.1.0` is gone from the app source |
+| 2026-11-17 | same | release body comes from the notes file | PASS — body byte-identical to `docs/releases/v0.2.1.md`; the job logged `notes: docs/releases/v0.2.1.md` |
 | — | — | Install on a physical iPhone and Android phone, then §1 and §5 | OPEN — needs the device and a signed-in Instagram session |
