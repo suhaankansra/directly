@@ -134,4 +134,7 @@ locally.
 | 2026-11-17 | same | release body comes from the notes file | PASS — body byte-identical to `docs/releases/v0.2.1.md`; the job logged `notes: docs/releases/v0.2.1.md` |
 | 2026-11-18 | `v1.3.0`, CI build from `34afd83` | versions, signature, and that the new UI actually shipped | PASS — APK 1.3.0 / versionCode 4, signed v2; IPA 1.3.0 / build 4, `arm64`, unsigned; the bundle carries the alerts copy, `Switch account`, and the embedded in-page script's `accountChevron` candidate and menu toast |
 | 2026-11-18 | same | release body comes from the notes file | PASS — body equals `docs/releases/v1.3.0.md` apart from the trailing newline `gh` adds |
+| 2026-11-18 | `v1.3.1`, CI build from `35be5d7` | versions, signature, and that both fixes actually shipped | PASS — APK 1.3.1 / versionCode 5, signed v2 (`CN=Android Debug`), minSdk 24, targetSdk 36; IPA 1.3.1 / build 5, `arm64`, unsigned; both JS bundles carry `di:open-profile`, the Facebook notice and the profile-link toast (the two notices only as UTF-16LE, because of their typographic apostrophes) |
+| 2026-11-18 | same | the link policy is in the shipped bundle, not just the source | PASS — `l.instagram.com` is present in both bundles as an ASCII string, so the shim is classified rather than punted to Safari |
+| 2026-11-18 | same | release body comes from the notes file | PASS — body equals `docs/releases/v1.3.1.md` apart from the trailing newline `gh` adds |
 | — | — | Install on a physical iPhone and Android phone, then §1 and §5 | OPEN — needs the device and a signed-in Instagram session |
