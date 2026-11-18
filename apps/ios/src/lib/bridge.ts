@@ -36,6 +36,17 @@ export function accountMenuMessage(): string {
   return `window.postMessage(${JSON.stringify({ v: 1, type: 'di:account-menu' })}, window.location.origin); true;`;
 }
 
+/**
+ * Ask the page to open your own profile.
+ *
+ * The host knows the handle only when the page has reported one, which it cannot
+ * do on a thread or a story. A payload-free request lets the page use the link it
+ * is already showing instead of the Profile tab quietly loading the inbox.
+ */
+export function openProfileMessage(): string {
+  return `window.postMessage(${JSON.stringify({ v: 1, type: 'di:open-profile' })}, window.location.origin); true;`;
+}
+
 /** Navigate the WebView to a path, e.g. when a tab is tapped. */
 export function navigateMessage(path: string): string {
   return `window.location.assign(${JSON.stringify(path)}); true;`;

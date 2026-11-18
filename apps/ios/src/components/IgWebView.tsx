@@ -3,6 +3,7 @@ import { Linking, StyleSheet, View } from 'react-native';
 import { WebView, type WebViewMessageEvent, type WebViewNavigation } from 'react-native-webview';
 import {
   INBOX_PATH,
+  classifyLink,
   hostVerdict,
   normalizePath,
   tabForPath,
@@ -15,6 +16,7 @@ import {
   accountMenuMessage,
   injectionScript,
   navigateMessage,
+  openProfileMessage,
   readPageMessage,
   settingsMessage,
 } from '../lib/bridge';
@@ -28,6 +30,8 @@ export type IgWebViewHandle = {
   navigate: (path: string) => void;
   /** Opens Instagram's own account menu, or says it is not on this screen. */
   openAccountMenu: () => void;
+  /** Opens your own profile, asking the page for the handle when it is unknown. */
+  openProfile: () => void;
   pushSettings: (settings: Settings) => void;
   reload: () => void;
   /** Drops the WebView's shared resource cache (used on sign-out). */
@@ -42,12 +46,18 @@ type Props = {
   /** Unread DMs, as a count only. */
   onUnread: (count: number) => void;
   onLoadingChange: (loading: boolean) => void;
+  /**
+   * Something the user tried that this app cannot do, in a sentence worth
+   * reading. Distinct from `onBlocked`: not a route rule, so it is always shown.
+   */
+  onNotice: (message: string) => void;
   /** Changing the nonce navigates to `path`. */
   navigateTarget: { path: string; nonce: number } | null;
   initialPin?: string | null;
 };
 
-const INSTAGRAM_HOST = /^https:\/\/(www\.)?instagram\.com(\/|$)/i;
+const FACEBOOK_NOTICE =
+  'Facebook sign-in can’t finish in Directly — use your Instagram username and password.';
 
 /** The imperative methods this app uses. */
 type WebViewCommands = {
@@ -68,7 +78,17 @@ const TypedWebView = WebView as unknown as React.ComponentType<
 >;
 
 export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
-  { settings, onRoute, onBlocked, onAccount, onUnread, onLoadingChange, navigateTarget, initialPin = null },
+  {
+    settings,
+    onRoute,
+    onBlocked,
+    onAccount,
+    onUnread,
+    onLoadingChange,
+    onNotice,
+    navigateTarget,
+    initialPin = null,
+  },
   ref,
 ) {
   const webRef = useRef<WebViewCommands | null>(null);
@@ -101,6 +121,9 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       openAccountMenu: () => {
         webRef.current?.injectJavaScript(accountMenuMessage());
       },
+      openProfile: () => {
+        webRef.current?.injectJavaScript(openProfileMessage());
+      },
       pushSettings: (next: Settings) => {
         webRef.current?.injectJavaScript(settingsMessage(next));
       },
@@ -129,8 +152,37 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       const { url } = request;
       if (url === 'about:blank') return true;
 
-      if (!INSTAGRAM_HOST.test(url)) {
-        void Linking.openURL(url).catch(() => undefined);
+      const target = classifyLink(url);
+
+      // Facebook's sign-in dialog. Handed to Safari it would log the user in
+      // somewhere this WebView can never see, so the button would appear to do
+      // nothing and tapping it again would loop. Say what to do instead.
+      if (target.kind === 'meta-login') {
+        onNotice(FACEBOOK_NOTICE);
+        return false;
+      }
+
+      if (target.kind === 'invalid') return false;
+
+      if (target.kind === 'external') {
+        void Linking.openURL(target.url).catch(() => undefined);
+        return false;
+      }
+
+      // Instagram's link shim wraps an outbound URL; navigate to the unwrapped
+      // destination so the route rules judge what is really being opened.
+      if (target.unwrapped) {
+        const viaShim = hostVerdict(
+          target.url,
+          { settings: settingsRef.current, loggedIn: true, pinId: pinRef.current },
+          lastPath.current,
+        );
+        if (viaShim.action === 'block') {
+          onBlocked(viaShim.reason, viaShim.path);
+          navigate(INBOX_PATH);
+        } else {
+          navigate(normalizePath(target.url));
+        }
         return false;
       }
 
@@ -147,7 +199,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       }
       return true;
     },
-    [navigate, onBlocked],
+    [navigate, onBlocked, onNotice],
   );
 
   const onMessage = useCallback(

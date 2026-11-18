@@ -19,6 +19,7 @@ import {
 } from '../routes.js';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../settings.js';
 import { openAccountMenu } from './accountMenu.js';
+import { ownProfilePath } from './profileLink.js';
 import { restoreRemovals, runCleanup } from './cleanup.js';
 import { installRouteGuard, type RouteGuard } from './guard.js';
 import { createNavBar, type NavBar } from './navBar.js';
@@ -217,10 +218,7 @@ export function boot(options: BootOptions = {}): Booted {
   function profilePath(doc: Document): string | null {
     // Read the logged-in username from the page's own links; we never touch
     // storage or credentials for this.
-    const anchor = doc.querySelector<HTMLAnchorElement>("a[href^='/'][role='link'] img[alt*='profile']");
-    const href = anchor?.parentElement?.getAttribute('href');
-    if (href && /^\/[A-Za-z0-9._]+\/$/.test(href)) return href;
-    return null;
+    return ownProfilePath(doc);
   }
 
   function tabPath(tab: TabId): string | null {
@@ -386,6 +384,14 @@ export function boot(options: BootOptions = {}): Booted {
         if (!openAccountMenu({ win, resolver })) {
           toast.show('Instagram’s account menu isn’t on this screen');
         }
+        break;
+      }
+      case 'di:open-profile': {
+        // The host only asks when it has no handle to build a path from, so use
+        // yours from the page. Saying nothing would look like a dead tab.
+        const href = profilePath(doc);
+        if (href) navigate(href);
+        else toast.show('Your profile link isn’t on this screen');
         break;
       }
     }

@@ -115,6 +115,14 @@ describe('parseHostMessage', () => {
     expect(parseHostMessage({ v: 1, type: 'di:pin', id: '<script>' })).toBeNull();
   });
 
+  it('accepts the open-profile request and drops any payload', () => {
+    expect(parseHostMessage({ v: 1, type: 'di:open-profile' })).toEqual({ v: 1, type: 'di:open-profile' });
+    expect(parseHostMessage({ v: 1, type: 'di:open-profile', path: '/bob/' })).toEqual({
+      v: 1,
+      type: 'di:open-profile',
+    });
+  });
+
   it('accepts the account-menu request and carries nothing with it', () => {
     expect(parseHostMessage({ v: 1, type: 'di:account-menu' })).toEqual({ v: 1, type: 'di:account-menu' });
     // Anything a caller tries to smuggle alongside it is dropped, not forwarded.

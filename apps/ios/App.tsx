@@ -158,6 +158,11 @@ function Shell() {
     [settings.showBlockToast],
   );
 
+  // Not a route block, so the "blocked route" switch does not apply: this is the
+  // app being unable to do what was tapped, and staying quiet would repeat the
+  // silent nothing that sent people to Facebook in the first place.
+  const onNotice = useCallback((message: string) => setToast(message), []);
+
   const onRoute = useCallback((nextPath: string, nextLayout: Layout, _pin: string | null, nextTab: TabId | null) => {
     pathRef.current = nextPath;
     setPath(nextPath);
@@ -220,6 +225,13 @@ function Shell() {
       }
       setLockOpen(false);
       setTab(next);
+      // Without a handle there is no path to build, and loading the inbox in its
+      // place made the tab look dead. Let the page use the profile link it is
+      // already showing.
+      if (next === 'profile' && !username) {
+        web.current?.openProfile();
+        return;
+      }
       const destination = pathForTab(next, username);
       setTarget({ path: destination, nonce: Date.now() });
     },
@@ -285,9 +297,10 @@ function Shell() {
       <StatusBar style="light" />
       <View style={styles.body}>
         <View style={[styles.webLayer, lockOpen && styles.hidden]}>
-          <IgWebView
+                      <IgWebView
             ref={web}
             settings={settings}
+            onNotice={onNotice}
             onRoute={onRoute}
             onBlocked={onBlocked}
             onAccount={onAccount}
@@ -315,6 +328,7 @@ function Shell() {
                 setLockOpen(false);
                 setTab('profile');
                 if (username) setTarget({ path: `/${username}/`, nonce: Date.now() });
+                else web.current?.openProfile();
               }}
               onSignOut={() => void signOut()}
               version={VERSION}

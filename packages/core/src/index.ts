@@ -42,4 +42,6 @@ export {
 
 export { hostVerdict, type HostDecision } from './host.js';
 
+export { classifyLink, isInstagramHost, type LinkKind, type LinkTarget } from './links.js';
+
 export const CORE_VERSION = '0.1.0';
