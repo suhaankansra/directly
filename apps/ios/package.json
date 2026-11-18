@@ -1,6 +1,6 @@
 {
   "name": "@directly/ios",
-  "version": "0.2.1",
+  "version": "1.3.0",
   "private": true,
   "main": "index.js",
   "scripts": {
