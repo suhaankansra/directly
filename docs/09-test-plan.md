@@ -132,4 +132,6 @@ locally.
 | 2026-11-17 | `v0.2.1`, CI build from `08875f4` | versions, signatures, and that the app code actually shipped | PASS — APK 0.2.1 / versionCode 3, signed v2; IPA 0.2.1 / build 3, `arm64`, unsigned; `main.jsbundle` carries the easter-egg string, so the Lock-screen change is in the binary |
 | 2026-11-17 | same | the version footer no longer lies | PASS (bundle) — `app.json` is bundled (`predictiveBackGestureEnabled` present) and `0.2.1` is in the Metro output; the hardcoded `0.1.0` is gone from the app source |
 | 2026-11-17 | same | release body comes from the notes file | PASS — body byte-identical to `docs/releases/v0.2.1.md`; the job logged `notes: docs/releases/v0.2.1.md` |
+| 2026-11-18 | `v1.3.0`, CI build from `34afd83` | versions, signature, and that the new UI actually shipped | PASS — APK 1.3.0 / versionCode 4, signed v2; IPA 1.3.0 / build 4, `arm64`, unsigned; the bundle carries the alerts copy, `Switch account`, and the embedded in-page script's `accountChevron` candidate and menu toast |
+| 2026-11-18 | same | release body comes from the notes file | PASS — body equals `docs/releases/v1.3.0.md` apart from the trailing newline `gh` adds |
 | — | — | Install on a physical iPhone and Android phone, then §1 and §5 | OPEN — needs the device and a signed-in Instagram session |
