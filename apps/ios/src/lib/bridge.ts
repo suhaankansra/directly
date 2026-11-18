@@ -25,6 +25,17 @@ export function pinMessage(id: string | null): string {
   return `window.postMessage(${JSON.stringify({ v: 1, type: 'di:pin', id })}, window.location.origin); true;`;
 }
 
+/**
+ * Ask the page to open Instagram's own account menu.
+ *
+ * This app holds one session, so it cannot list or swap accounts itself; the
+ * switcher Instagram draws behind the header chevron is the only real one. The
+ * in-page half clicks that control and says so if it is missing.
+ */
+export function accountMenuMessage(): string {
+  return `window.postMessage(${JSON.stringify({ v: 1, type: 'di:account-menu' })}, window.location.origin); true;`;
+}
+
 /** Navigate the WebView to a path, e.g. when a tab is tapped. */
 export function navigateMessage(path: string): string {
   return `window.location.assign(${JSON.stringify(path)}); true;`;

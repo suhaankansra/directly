@@ -11,7 +11,13 @@ import {
   type TabId,
 } from '@directly/core';
 
-import { injectionScript, navigateMessage, readPageMessage, settingsMessage } from '../lib/bridge';
+import {
+  accountMenuMessage,
+  injectionScript,
+  navigateMessage,
+  readPageMessage,
+  settingsMessage,
+} from '../lib/bridge';
 import { inpageScript } from '../lib/injectedScript';
 import { colors } from '../theme';
 import { LoadingSurface } from './LoadingSurface';
@@ -20,6 +26,8 @@ export type IgWebViewHandle = {
   /** Returns false when there is nothing to go back to. */
   goBack: () => boolean;
   navigate: (path: string) => void;
+  /** Opens Instagram's own account menu, or says it is not on this screen. */
+  openAccountMenu: () => void;
   pushSettings: (settings: Settings) => void;
   reload: () => void;
   /** Drops the WebView's shared resource cache (used on sign-out). */
@@ -90,6 +98,9 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         return lastPath.current !== INBOX_PATH;
       },
       navigate,
+      openAccountMenu: () => {
+        webRef.current?.injectJavaScript(accountMenuMessage());
+      },
       pushSettings: (next: Settings) => {
         webRef.current?.injectJavaScript(settingsMessage(next));
       },

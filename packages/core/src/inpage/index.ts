@@ -18,6 +18,7 @@ import {
   type TabId,
 } from '../routes.js';
 import { DEFAULT_SETTINGS, mergeSettings, type Settings } from '../settings.js';
+import { openAccountMenu } from './accountMenu.js';
 import { restoreRemovals, runCleanup } from './cleanup.js';
 import { installRouteGuard, type RouteGuard } from './guard.js';
 import { createNavBar, type NavBar } from './navBar.js';
@@ -379,6 +380,14 @@ export function boot(options: BootOptions = {}): Booted {
         if (message.id) reelLock.arm(message.id);
         else reelLock.disarm();
         break;
+      case 'di:account-menu': {
+        // Instagram's own switcher, opened where it already lives. A miss is
+        // said out loud: a button that silently does nothing reads as broken.
+        if (!openAccountMenu({ win, resolver })) {
+          toast.show('Instagram’s account menu isn’t on this screen');
+        }
+        break;
+      }
     }
   }
 

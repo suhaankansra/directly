@@ -16,8 +16,14 @@ type Props = {
   unreadAt: number | null;
   /** The route the page is on, so a copied report says where it went wrong. */
   path: string;
+  /** DM alerts on or off, and whether the OS has ruled them out entirely. */
+  alerts: boolean;
+  alertsBlocked: boolean;
+  onAlertsChange: (next: boolean) => void;
   onChange: (next: Settings) => void;
   onOpenProfile: () => void;
+  /** Opens Instagram's own account menu — the only switcher that exists here. */
+  onSwitchAccount: () => void;
   onSignOut: () => void;
   version: string;
 };
@@ -58,8 +64,12 @@ export function LockScreen({
   unread,
   unreadAt,
   path,
+  alerts,
+  alertsBlocked,
+  onAlertsChange,
   onChange,
   onOpenProfile,
+  onSwitchAccount,
   onSignOut,
   version,
 }: Props) {
@@ -132,23 +142,60 @@ export function LockScreen({
             : 'Sign in on the DMs tab. The session lives in this app’s own web view — Directly never sees your password, your cookies or your messages.'}
         </Text>
         {signedIn ? (
-          <View style={styles.buttons}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onOpenProfile}
-              style={({ pressed }) => [styles.button, pressed && styles.pressed]}
-            >
-              <Text style={styles.buttonText}>View profile</Text>
-            </Pressable>
+          <>
+            <View style={styles.buttons}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={onOpenProfile}
+                style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+              >
+                <Text style={styles.buttonText}>View profile</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityHint="Opens Instagram’s own account menu"
+                onPress={onSwitchAccount}
+                style={({ pressed }) => [styles.button, styles.buttonGhost, pressed && styles.pressed]}
+              >
+                <Text style={[styles.buttonText, styles.buttonGhostText]}>Switch account</Text>
+              </Pressable>
+            </View>
+            <Text style={[styles.note, styles.accountNote]}>
+              One session lives in this web view, so a second account is switched with Instagram’s own
+              menu. Directly never stores a second login.
+            </Text>
             <Pressable
               accessibilityRole="button"
               onPress={onSignOut}
-              style={({ pressed }) => [styles.button, styles.buttonGhost, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.button, styles.buttonGhost, styles.signOut, pressed && styles.pressed]}
             >
               <Text style={[styles.buttonText, styles.buttonGhostText]}>Sign out</Text>
             </Pressable>
-          </View>
+          </>
         ) : null}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Alerts</Text>
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>New messages</Text>
+            <Text style={styles.note}>
+              {alertsBlocked
+                ? 'Notifications are off for Directly in your device settings. This switch cannot override that.'
+                : 'A banner while Directly is open. Instagram’s push cannot reach a web view, and there is no server here to forward it.'}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="New message alerts"
+            value={alerts}
+            disabled={alertsBlocked}
+            onValueChange={onAlertsChange}
+            trackColor={{ false: '#2a2a33', true: colors.accentSoft }}
+            thumbColor={alerts ? colors.accent : '#7a7a86'}
+            ios_backgroundColor="#2a2a33"
+          />
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -241,7 +288,9 @@ const styles = StyleSheet.create({
   },
   account: { color: colors.text, fontSize: 17, fontWeight: '600', marginBottom: 4 },
   note: { color: colors.muted, fontSize: 12.5, lineHeight: 18 },
-  buttons: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.md },
+  buttons: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
+  accountNote: { marginTop: spacing.sm },
+  signOut: { alignSelf: 'flex-start', marginTop: spacing.sm },
   button: {
     backgroundColor: colors.accent,
     borderRadius: radius.md,

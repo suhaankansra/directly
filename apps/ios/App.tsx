@@ -6,6 +6,7 @@ import {
   DEFAULT_SETTINGS,
   INBOX_PATH,
   pathForTab,
+  tabForPath,
   type Layout,
   type Settings,
   type TabId,
@@ -17,12 +18,21 @@ import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
 import { LockScreen } from './src/screens/LockScreen';
 import {
+  alertPermission,
+  clearAlerts,
   ensureNotificationPermission,
   installNotificationHandler,
   notifyUnread,
   setUnreadBadge,
 } from './src/lib/notifications';
-import { loadSettings, loadUsername, saveSettings, saveUsername } from './src/lib/settings';
+import {
+  loadAlerts,
+  loadSettings,
+  loadUsername,
+  saveAlerts,
+  saveSettings,
+  saveUsername,
+} from './src/lib/settings';
 import { colors, radius, spacing } from './src/theme';
 
 // Read from app.json rather than typed here: the copy in this file said 0.1.0 for
@@ -49,6 +59,12 @@ function Shell() {
   // When the count last arrived, so the Lock screen can say whether the page has
   // ever exposed it — the difference between "no messages" and "no badge found".
   const [unreadAt, setUnreadAt] = useState<number | null>(null);
+  // Alerts are only ever local (see lib/notifications.ts), so the switch here is
+  // the whole feature: on means a banner while the app is running, off means the
+  // app stays quiet and drops the badge.
+  const [alerts, setAlerts] = useState(true);
+  /** The OS refused and will not prompt again — the switch cannot turn on. */
+  const [alertsBlocked, setAlertsBlocked] = useState(false);
 
   // Read by `onUnread` without making its identity change on every route — the
   // WebView keeps the callback in a `useCallback` chain.
@@ -56,19 +72,27 @@ function Shell() {
   const pathRef = useRef<string>(INBOX_PATH);
   const lockRef = useRef(false);
   const askedForAlerts = useRef(false);
+  const alertsRef = useRef(true);
   /** The first count of a session is the state of the world, not news. */
   const hydratedUnread = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([loadSettings(), loadUsername()]).then(([loaded, remembered]) => {
-      if (cancelled) return;
-      setSettings(loaded);
-      // Only fills the gap until the page reports the account again; a page
-      // report always wins, so signing into another account corrects this.
-      setUsername(remembered);
-      setSettingsReady(true);
-    });
+    void Promise.all([loadSettings(), loadUsername(), loadAlerts(), alertPermission()]).then(
+      ([loaded, remembered, alertsOn, permission]) => {
+        if (cancelled) return;
+        setSettings(loaded);
+        // Only fills the gap until the page reports the account again; a page
+        // report always wins, so signing into another account corrects this.
+        setUsername(remembered);
+        setAlerts(alertsOn);
+        alertsRef.current = alertsOn;
+        // "Denied" outlives the switch: the OS will not prompt again, so the
+        // screen says that instead of toggling on and silently doing nothing.
+        setAlertsBlocked(alertsOn && permission === 'denied');
+        setSettingsReady(true);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -87,10 +111,38 @@ function Shell() {
     // Ask for alerts only once there is a session to alert about, and only once:
     // a refusal is remembered by the OS, so re-asking every launch achieves
     // nothing except irritation.
-    if (!signedIn || askedForAlerts.current) return;
+    if (!signedIn || askedForAlerts.current || !alertsRef.current) return;
     askedForAlerts.current = true;
-    void ensureNotificationPermission();
+    void ensureNotificationPermission().then((granted) => {
+      if (granted) return;
+      // A refusal is the OS's answer, not ours: reflect it rather than showing
+      // an on switch next to an app that will never alert.
+      setAlerts(false);
+      alertsRef.current = false;
+      setAlertsBlocked(true);
+      void saveAlerts(false);
+    });
   }, [signedIn]);
+
+  const updateAlerts = useCallback((next: boolean) => {
+    if (!next) {
+      setAlerts(false);
+      alertsRef.current = false;
+      void saveAlerts(false);
+      void clearAlerts();
+      return;
+    }
+    void ensureNotificationPermission().then((granted) => {
+      setAlertsBlocked(!granted);
+      if (!granted) return;
+      setAlerts(true);
+      alertsRef.current = true;
+      void saveAlerts(true);
+      // The count the page already reported is still true; badge it now that
+      // alerts are on, without waiting for the next message to arrive.
+      void setUnreadBadge(unreadRef.current);
+    });
+  }, []);
 
   useEffect(() => {
     if (!toast) return;
@@ -131,6 +183,13 @@ function Shell() {
   const onUnread = useCallback((count: number) => {
     setUnread(count);
     setUnreadAt(Date.now());
+    if (!alertsRef.current) {
+      unreadRef.current = count;
+      // The tab bar still counts, but the icon badge is an alert: no alerts, no
+      // badge. `unreadRef` keeps the count for when the switch goes back on.
+      if (!hydratedUnread.current) hydratedUnread.current = true;
+      return;
+    }
     void setUnreadBadge(count);
     const previous = unreadRef.current;
     unreadRef.current = count;
@@ -166,6 +225,16 @@ function Shell() {
     },
     [username],
   );
+
+  const switchAccount = useCallback(() => {
+    // The Lock screen sits on top of the web view (and the page is at opacity 0
+    // behind it), so opening Instagram's menu from there would show it to nobody.
+    // Close the overlay, move the tab highlight back to the page we reveal, then
+    // click the page's own chevron.
+    setLockOpen(false);
+    setTab(tabForPath(path) ?? 'inbox');
+    setTimeout(() => web.current?.openAccountMenu(), 80);
+  }, [path]);
 
   const signOut = useCallback(async () => {
     // Sign-out is Instagram's own: its logout route ends the session server-side
@@ -237,6 +306,10 @@ function Shell() {
               unread={unread}
               unreadAt={unreadAt}
               path={path}
+              alerts={alerts}
+              alertsBlocked={alertsBlocked}
+              onAlertsChange={updateAlerts}
+              onSwitchAccount={switchAccount}
               onChange={updateSettings}
               onOpenProfile={() => {
                 setLockOpen(false);

@@ -35,6 +35,22 @@ export function installNotificationHandler(): void {
 }
 
 /**
+ * What the OS says right now, without asking. `denied` means it will not even
+ * prompt again, which is the difference between "not asked yet" and "off".
+ */
+export type AlertPermission = 'granted' | 'denied' | 'undetermined';
+
+export async function alertPermission(): Promise<AlertPermission> {
+  try {
+    const current = await Notifications.getPermissionsAsync();
+    if (current.granted) return 'granted';
+    return current.canAskAgain ? 'undetermined' : 'denied';
+  } catch {
+    return 'undetermined';
+  }
+}
+
+/**
  * Ask once, and treat a refusal as final: no alerts is a smaller loss than
  * nagging for a permission the user already declined.
  */
@@ -75,6 +91,16 @@ export async function notifyUnread(count: number): Promise<void> {
 export async function setUnreadBadge(count: number): Promise<void> {
   try {
     await Notifications.setBadgeCountAsync(count);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Turning alerts off has to take down what is already showing. */
+export async function clearAlerts(): Promise<void> {
+  try {
+    await Notifications.dismissAllNotificationsAsync();
+    await Notifications.setBadgeCountAsync(0);
   } catch {
     /* ignore */
   }

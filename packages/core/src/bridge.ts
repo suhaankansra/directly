@@ -28,7 +28,10 @@ export type PageMessage =
 export type HostMessage =
   | { v: 1; type: 'di:settings'; settings: Settings }
   | { v: 1; type: 'di:navigate'; path: string }
-  | { v: 1; type: 'di:pin'; id: string | null };
+  | { v: 1; type: 'di:pin'; id: string | null }
+  // A request with no payload: open Instagram's own account menu. Nothing about
+  // an account travels in either direction.
+  | { v: 1; type: 'di:account-menu' };
 
 const TAB_IDS = new Set<TabId>(['inbox', 'activity', 'profile', 'lock']);
 const LAYOUTS = new Set<Layout>(['mobile', 'desktop']);
@@ -142,6 +145,8 @@ export function parseHostMessage(input: unknown): HostMessage | null {
       if (typeof id !== 'string' || id.length > 128 || !/^[A-Za-z0-9_-]+$/.test(id)) return null;
       return { v: 1, type: 'di:pin', id };
     }
+    case 'di:account-menu':
+      return { v: 1, type: 'di:account-menu' };
     default:
       return null;
   }

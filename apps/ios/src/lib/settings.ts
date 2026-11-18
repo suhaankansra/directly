@@ -54,3 +54,29 @@ export async function saveUsername(username: string | null): Promise<void> {
     // Best effort: the next detected handle is stored again.
   }
 }
+
+/**
+ * DM alerts on or off.
+ *
+ * Host-only, unlike the switches in `Settings`: the page never needs to know
+ * whether a notification will be raised, so it does not belong in the protocol.
+ * Default on, because that was the behaviour before the switch existed.
+ */
+const ALERTS_KEY = 'directly.alerts.v1';
+
+export async function loadAlerts(): Promise<boolean> {
+  try {
+    const raw = await AsyncStorage.getItem(ALERTS_KEY);
+    return raw === null ? true : raw === '1';
+  } catch {
+    return true;
+  }
+}
+
+export async function saveAlerts(enabled: boolean): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ALERTS_KEY, enabled ? '1' : '0');
+  } catch {
+    // Best effort: the switch reverts on the next launch rather than crashing.
+  }
+}

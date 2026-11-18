@@ -114,4 +114,14 @@ describe('parseHostMessage', () => {
     expect(parseHostMessage({ v: 1, type: 'di:pin', id: null })).toMatchObject({ id: null });
     expect(parseHostMessage({ v: 1, type: 'di:pin', id: '<script>' })).toBeNull();
   });
+
+  it('accepts the account-menu request and carries nothing with it', () => {
+    expect(parseHostMessage({ v: 1, type: 'di:account-menu' })).toEqual({ v: 1, type: 'di:account-menu' });
+    // Anything a caller tries to smuggle alongside it is dropped, not forwarded.
+    expect(parseHostMessage({ v: 1, type: 'di:account-menu', username: 'alice' })).toEqual({
+      v: 1,
+      type: 'di:account-menu',
+    });
+    expect(parseHostMessage({ v: 2, type: 'di:account-menu' })).toBeNull();
+  });
 });
