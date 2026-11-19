@@ -41,6 +41,12 @@ import { colors, radius, spacing } from './src/theme';
 const VERSION: string = appConfig.expo.version;
 const BLOCK_TOAST = 'Directly — that isn’t here';
 
+/** What a tab says when Instagram sends the tap back to the inbox instead. */
+const TAB_FAILED: Partial<Record<TabId, string>> = {
+  activity: 'Instagram doesn’t serve Activity here',
+  profile: 'Couldn’t open your profile',
+};
+
 function Shell() {
   const insets = useSafeAreaInsets();
   const web = useRef<IgWebViewHandle>(null);
@@ -69,6 +75,12 @@ function Shell() {
   // Read by `onUnread` without making its identity change on every route — the
   // WebView keeps the callback in a `useCallback` chain.
   const unreadRef = useRef(0);
+  /**
+   * The tab that was just tapped, until the page confirms it got there. A tap
+   * that Instagram redirects away ends on the inbox, which used to look exactly
+   * like a dead tab: the highlight moved and nothing else happened.
+   */
+  const pendingTab = useRef<{ tab: TabId; at: number } | null>(null);
   const pathRef = useRef<string>(INBOX_PATH);
   const lockRef = useRef(false);
   const askedForAlerts = useRef(false);
@@ -164,6 +176,15 @@ function Shell() {
   const onNotice = useCallback((message: string) => setToast(message), []);
 
   const onRoute = useCallback((nextPath: string, nextLayout: Layout, _pin: string | null, nextTab: TabId | null) => {
+    const pending = pendingTab.current;
+    if (pending) {
+      const settled = nextTab === pending.tab || Date.now() - pending.at > 5000;
+      if (settled) pendingTab.current = null;
+      else if (nextPath === INBOX_PATH && TAB_FAILED[pending.tab]) {
+        pendingTab.current = null;
+        setToast(TAB_FAILED[pending.tab] ?? null);
+      }
+    }
     pathRef.current = nextPath;
     setPath(nextPath);
     setLayout(nextLayout);
@@ -225,6 +246,7 @@ function Shell() {
       }
       setLockOpen(false);
       setTab(next);
+      pendingTab.current = { tab: next, at: Date.now() };
       // Without a handle there is no path to build, and loading the inbox in its
       // place made the tab look dead. Let the page use the profile link it is
       // already showing.

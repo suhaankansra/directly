@@ -17,12 +17,25 @@ const PROFILE_HREF = /^\/([A-Za-z0-9._]{1,30})\/$/;
  * The href of the account's own profile link, or null when the page has not
  * rendered one. Requires the `alt` to look like a profile picture and to name
  * the same handle, so somebody else's avatar in a card cannot be mistaken for
- * yours.
+ * yours, or an `aria-label` naming the destination, as Instagram's own
+ * navigation does.
  */
 export function ownProfilePath(doc: Document): string | null {
   const anchor = doc.querySelector<HTMLAnchorElement>("a[href^='/'][role='link'] img[alt*='profile']");
   const href = anchor?.parentElement?.getAttribute('href');
   if (href && PROFILE_HREF.test(href)) return href;
+
+  // Instagram's own navigation labels where it goes, and on mobile its
+  // "Profile" item links straight to your handle. That item survives on the
+  // screens where your avatar is not rendered at all — an inbox or a thread —
+  // which is exactly where the tab used to have nowhere to go. `aria-label`
+  // rather than layout order, so it holds in both Instagram layouts.
+  for (const labelled of Array.from(
+    doc.querySelectorAll<HTMLAnchorElement>("a[aria-label='Profile' i][href^='/']"),
+  )) {
+    const own = labelled.getAttribute('href') ?? '';
+    if (PROFILE_HREF.test(own)) return own;
+  }
 
   for (const candidate of Array.from(doc.querySelectorAll<HTMLAnchorElement>("a[href^='/']"))) {
     const href = candidate.getAttribute('href') ?? '';

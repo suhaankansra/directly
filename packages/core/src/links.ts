@@ -61,6 +61,12 @@ export function isInstagramHost(hostname: string): boolean {
   return inDomain(hostname.toLowerCase(), INSTAGRAM);
 }
 
+/** True for facebook.com and every subdomain of it — but not lookalikes. */
+export function isMetaHost(url: string): boolean {
+  const parsed = parse(url);
+  return parsed !== null && inDomain(parsed.hostname.toLowerCase(), META);
+}
+
 function parse(raw: string): URL | null {
   try {
     return new URL(raw);

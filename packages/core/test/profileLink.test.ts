@@ -39,6 +39,23 @@ describe('ownProfilePath', () => {
     expect(ownProfilePath(document)).toBeNull();
   });
 
+  it("uses Instagram's own Profile nav item when no avatar is rendered", () => {
+    // The inbox and a thread show no avatar of yours; their bottom navigation
+    // still links to your profile, which is what the tab needs.
+    document.body.innerHTML = `
+      <nav role="navigation">
+        <a href="/direct/inbox/" aria-label="Messages">Messages</a>
+        <a href="/dana/" aria-label="Profile">Profile</a>
+      </nav>`;
+    expect(ownProfilePath(document)).toBe('/dana/');
+  });
+
+  it('ignores a Profile label that does not point at a single handle', () => {
+    document.body.innerHTML = `
+      <nav><a href="/accounts/edit/" aria-label="Profile">Profile</a></nav>`;
+    expect(ownProfilePath(document)).toBeNull();
+  });
+
   it('is null on a page with no profile link at all', () => {
     document.body.innerHTML = `<main><textarea></textarea></main>`;
     expect(ownProfilePath(document)).toBeNull();

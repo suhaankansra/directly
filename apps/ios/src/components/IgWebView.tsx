@@ -5,6 +5,7 @@ import {
   INBOX_PATH,
   classifyLink,
   hostVerdict,
+  isMetaHost,
   normalizePath,
   tabForPath,
   type Layout,
@@ -56,7 +57,15 @@ type Props = {
   initialPin?: string | null;
 };
 
-const FACEBOOK_NOTICE =
+/**
+ * Paths Instagram serves while you are not signed in. Anywhere Facebook reached
+ * from one of these is a sign-in attempt.
+ */
+const LOGIN_PAGE = /^\/accounts\/(login|signup|emailsignup|password|oauth|onetap)|^\/challenge(\/|$)/;
+
+const FACEBOOK_NOTICE = 'Directly doesn’t open Facebook pages.';
+
+const FACEBOOK_SIGN_IN_NOTICE =
   'Facebook sign-in can’t finish in Directly — use your Instagram username and password.';
 
 /** The imperative methods this app uses. */
@@ -148,17 +157,31 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
    * reaches this — the injected core handles those before they render.
    */
   const onShouldStartLoadWithRequest = useCallback(
-    (request: WebViewNavigation) => {
+    // `isTopFrame` is sent with every request but only declared on the package's
+    // private `ShouldStartLoadRequest`, which the root entry point does not
+    // export. Widened here, once, rather than casting at the use.
+    (request: WebViewNavigation & { isTopFrame?: boolean }) => {
       const { url } = request;
       if (url === 'about:blank') return true;
 
+      // A subframe is not the page the user is looking at. Instagram loads its
+      // Meta tracking pixel (`facebook.com/tr`, an iframe) on almost every page,
+      // and handing that to Safari opened the browser at random while reading
+      // DMs. Routes and outbound links are about the top frame only; a subframe
+      // is left to load or fail on its own.
+      if (request.isTopFrame === false) return true;
+
       const target = classifyLink(url);
 
-      // Facebook's sign-in dialog. Handed to Safari it would log the user in
-      // somewhere this WebView can never see, so the button would appear to do
-      // nothing and tapping it again would loop. Say what to do instead.
-      if (target.kind === 'meta-login') {
-        onNotice(FACEBOOK_NOTICE);
+      // Facebook, whichever of its URLs it is. Never Safari: there the sign-in
+      // would complete in a browser this WebView cannot see, so the button looks
+      // dead and tapping it again loops — that is the redirect being fixed.
+      // Our script also has no business running on facebook.com: its route rules
+      // redirect with a relative path, which would land on facebook.com. So it is
+      // refused here, with the reason said out loud.
+      const onSignInPage = LOGIN_PAGE.test(lastPath.current);
+      if (target.kind === 'meta-login' || isMetaHost(target.url)) {
+        onNotice(onSignInPage ? FACEBOOK_SIGN_IN_NOTICE : FACEBOOK_NOTICE);
         return false;
       }
 

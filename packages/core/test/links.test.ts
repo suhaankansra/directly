@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { classifyLink, isInstagramHost } from '../src/links';
+import { classifyLink, isInstagramHost, isMetaHost } from '../src/links';
 
 const kind = (url: string) => classifyLink(url).kind;
 
@@ -48,6 +48,16 @@ describe('classifyLink', () => {
     expect(kind('https://www.facebook.com/login.php')).toBe('meta-login');
     // A friend's Facebook page is a link, not a sign-in.
     expect(kind('https://www.facebook.com/somepage')).toBe('external');
+  });
+
+  it('recognises a Meta host the login page might use, whatever its path', () => {
+    // The host test is what lets the host refuse these while on a sign-in page:
+    // Facebook's sign-in does not always arrive as a tidy dialog/oauth URL.
+    expect(isMetaHost('https://www.facebook.com/')).toBe(true);
+    expect(isMetaHost('https://web.facebook.com/login.php?next=1')).toBe(true);
+    expect(isMetaHost('https://m.facebook.com/v18.0/dialog/oauth/read')).toBe(true);
+    expect(isMetaHost('https://notfacebook.com/login.php')).toBe(false);
+    expect(isMetaHost('https://facebook.com.evil.test/')).toBe(false);
   });
 
   it('keeps other sites external and refuses garbage', () => {

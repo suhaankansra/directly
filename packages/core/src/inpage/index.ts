@@ -259,7 +259,11 @@ export function boot(options: BootOptions = {}): Booted {
       if (anchor.closest("nav, [role='navigation'], header")) return name;
       fallback ??= name;
     }
-    return fallback;
+    if (fallback) return fallback;
+    // No avatar rendered: fall back to the link Instagram's own navigation
+    // labels "Profile", which points at your handle on every signed-in screen.
+    const own = ownProfilePath(doc);
+    return own ? own.slice(1, -1) : null;
   }
 
   function publishAccount(): void {
