@@ -17,6 +17,7 @@ import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
 import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
 import { LockScreen } from './src/screens/LockScreen';
+import { logEvent } from './src/lib/diagnostics';
 import {
   alertPermission,
   clearAlerts,
@@ -182,6 +183,7 @@ function Shell() {
       if (settled) pendingTab.current = null;
       else if (nextPath === INBOX_PATH && TAB_FAILED[pending.tab]) {
         pendingTab.current = null;
+        logEvent('tab-failed', pending.tab);
         setToast(TAB_FAILED[pending.tab] ?? null);
       }
     }
@@ -239,6 +241,7 @@ function Shell() {
 
   const selectTab = useCallback(
     (next: TabId) => {
+      logEvent('tap', next);
       if (next === 'lock') {
         setLockOpen(true);
         setTab('lock');
@@ -281,6 +284,7 @@ function Shell() {
     setUnread(0);
     unreadRef.current = 0;
     void setUnreadBadge(0);
+    logEvent('sign-out');
     try {
       web.current?.clearCache?.(true);
     } catch {

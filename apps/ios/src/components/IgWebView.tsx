@@ -21,6 +21,7 @@ import {
   readPageMessage,
   settingsMessage,
 } from '../lib/bridge';
+import { logEvent, shortUrl } from '../lib/diagnostics';
 import { inpageScript } from '../lib/injectedScript';
 import { colors } from '../theme';
 import { LoadingSurface } from './LoadingSurface';
@@ -169,7 +170,10 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       // and handing that to Safari opened the browser at random while reading
       // DMs. Routes and outbound links are about the top frame only; a subframe
       // is left to load or fail on its own.
-      if (request.isTopFrame === false) return true;
+      if (request.isTopFrame === false) {
+        logEvent('frame', shortUrl(url));
+        return true;
+      }
 
       const target = classifyLink(url);
 
@@ -181,13 +185,18 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       // refused here, with the reason said out loud.
       const onSignInPage = LOGIN_PAGE.test(lastPath.current);
       if (target.kind === 'meta-login' || isMetaHost(target.url)) {
+        logEvent('meta', shortUrl(target.url));
         onNotice(onSignInPage ? FACEBOOK_SIGN_IN_NOTICE : FACEBOOK_NOTICE);
         return false;
       }
 
-      if (target.kind === 'invalid') return false;
+      if (target.kind === 'invalid') {
+        logEvent('refuse', shortUrl(url));
+        return false;
+      }
 
       if (target.kind === 'external') {
+        logEvent('browser', shortUrl(target.url));
         void Linking.openURL(target.url).catch(() => undefined);
         return false;
       }
@@ -201,9 +210,11 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
           lastPath.current,
         );
         if (viaShim.action === 'block') {
+          logEvent('block', `${shortUrl(target.url)} ${viaShim.reason}`);
           onBlocked(viaShim.reason, viaShim.path);
           navigate(INBOX_PATH);
         } else {
+          logEvent('shim', normalizePath(target.url));
           navigate(normalizePath(target.url));
         }
         return false;
@@ -216,10 +227,12 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       );
 
       if (decision.action === 'block') {
+        logEvent('block', `${shortUrl(url)} ${decision.reason}`);
         onBlocked(decision.reason, decision.path);
         navigate(INBOX_PATH);
         return false;
       }
+      logEvent('allow', shortUrl(url));
       return true;
     },
     [navigate, onBlocked, onNotice],
@@ -234,22 +247,27 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         case 'di:url': {
           lastPath.current = message.path;
           pinRef.current = message.pinId;
+          logEvent('route', message.path);
           onRoute(message.path, message.layout, message.pinId, tabForPath(message.path));
           break;
         }
         case 'di:tab': {
+          logEvent('tab', message.tab ?? 'none');
           onRoute(lastPath.current, 'mobile', pinRef.current, message.tab);
           break;
         }
         case 'di:blocked': {
+          logEvent('page-block', `${message.path} ${message.reason}`);
           onBlocked(message.reason, message.path);
           break;
         }
         case 'di:account': {
+          logEvent('account', message.signedIn ? `@${message.username ?? 'unknown'}` : 'signed out');
           onAccount(message.username, message.signedIn);
           break;
         }
         case 'di:unread': {
+          logEvent('unread', String(message.count));
           onUnread(message.count);
           break;
         }
@@ -281,13 +299,19 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         injectedJavaScript={injectedAfterLoad}
         onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
         onMessage={onMessage}
-        onLoadStart={() => {
+        onLoadStart={(event) => {
+          logEvent('load', shortUrl(event.nativeEvent.url));
           setLoading(true);
           onLoadingChange(true);
         }}
         onLoadEnd={() => {
           onLoadingChange(false);
           setLoading(false);
+        }}
+        // A failed load used to show as a blank surface and nothing else. The
+        // text is the platform's, never page content.
+        onError={(event) => {
+          logEvent('load-error', (event.nativeEvent.description || '').slice(0, 80));
         }}
         onNavigationStateChange={(nav) => {
           if (!nav.loading && nav.url?.includes('instagram.com')) {

@@ -3,6 +3,7 @@ import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 
 import * as Clipboard from 'expo-clipboard';
 import type { Settings } from '@directly/core';
 
+import { clearDiagnostics, clock, reportLines, useDiagnostics } from '../lib/diagnostics';
 import { colors, radius, spacing } from '../theme';
 
 type Props = {
@@ -74,6 +75,9 @@ export function LockScreen({
   version,
 }: Props) {
   const [copied, setCopied] = useState(false);
+  // Recorded whether or not the switch is on, so turning it on after something
+  // went wrong still shows what led there; the switch decides what is shown.
+  const diagnostics = useDiagnostics();
 
   // Five taps on the version footer. Nothing is stored and nothing unlocks: the
   // app has no feed, no account and no server, so the only reward it can offer is
@@ -107,14 +111,17 @@ export function LockScreen({
 
   // Deliberately the same facts the card shows: no message, no cookie, no
   // credential. Copying is how these get off a phone that has no console.
+  const logLines = reportLines();
   const report = [
     `Directly ${version}`,
-    `platform ${Platform.OS}`,
+    `platform ${Platform.OS} ${String(Platform.Version)}`,
     signedIn ? `signed in as @${username ?? 'unknown'}` : 'not signed in',
     `path ${path}`,
     unreadAt === null
       ? 'unread unknown - no inbox link was read'
       : `unread ${unread} (read ${new Date(unreadAt).toISOString()})`,
+    '--- decisions, oldest first ---',
+    ...(logLines.length > 0 ? logLines : ['nothing recorded']),
   ].join('\n');
 
   const copyReport = useCallback(async () => {
@@ -230,14 +237,42 @@ export function LockScreen({
             Shown only while Debug logging is on. A count of 0 with a timestamp means the inbox link
             was found and had no badge; “nothing yet” means the selector never matched.
           </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Copy diagnostics"
-            onPress={() => void copyReport()}
-            style={({ pressed }) => [styles.copyButton, pressed && styles.pressed]}
-          >
-            <Text style={styles.buttonText}>{copied ? 'Copied' : 'Copy diagnostics'}</Text>
-          </Pressable>
+          <Text style={[styles.note, styles.logIntro]}>
+            Every navigation decision, newest first. Kept in memory on this phone and gone when the
+            app closes: routes, verdicts and link hosts — never a message.
+          </Text>
+          <View style={styles.log}>
+            {diagnostics.length === 0 ? (
+              <Text style={styles.logLine}>Nothing recorded yet — open a DM or tap a tab.</Text>
+            ) : (
+              [...diagnostics].reverse().map((entry, index) => (
+                <Text key={`${entry.at}-${index}`} style={styles.logLine} numberOfLines={2}>
+                  <Text style={styles.logTime}>{clock(entry.at)} </Text>
+                  {entry.kind}
+                  {entry.detail ? ` ${entry.detail}` : ''}
+                </Text>
+              ))
+            )}
+          </View>
+          <View style={styles.buttons}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Copy diagnostics"
+              onPress={() => void copyReport()}
+              style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+            >
+              <Text style={styles.buttonText}>{copied ? 'Copied' : 'Copy diagnostics'}</Text>
+            </Pressable>
+            {diagnostics.length > 0 ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={clearDiagnostics}
+                style={({ pressed }) => [styles.button, styles.buttonGhost, pressed && styles.pressed]}
+              >
+                <Text style={[styles.buttonText, styles.buttonGhostText]}>Clear</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       ) : null}
 
@@ -302,14 +337,17 @@ const styles = StyleSheet.create({
   buttonText: { color: '#fff', fontWeight: '600', fontSize: 13.5 },
   buttonGhostText: { color: colors.text },
   pressed: { opacity: 0.75 },
-  copyButton: {
-    alignSelf: 'flex-start',
-    marginTop: spacing.md,
-    backgroundColor: colors.accent,
-    borderRadius: radius.md,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+  logIntro: { marginTop: spacing.sm },
+  log: {
+    marginTop: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.28)',
+    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: 10,
+    gap: 3,
   },
+  logLine: { color: colors.text, fontSize: 11, lineHeight: 15, fontVariant: ['tabular-nums'] },
+  logTime: { color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 10 },
   rowDivided: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
   rowText: { flex: 1, gap: 2 },
