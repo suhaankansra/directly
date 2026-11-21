@@ -7,13 +7,14 @@
  * cosmetics (D017).
  */
 
-import { parseHostMessage, PROTOCOL_VERSION, type PageMessage } from '../bridge.js';
+import { parseHostMessage, PROTOCOL_VERSION, type PageMessage, type StoryRing } from '../bridge.js';
 import {
   INBOX_PATH,
   isProfilePath,
   normalizePath,
   reelIdForPath,
   tabForPath,
+  storyUserForPath,
   type Layout,
   type TabId,
 } from '../routes.js';
@@ -29,6 +30,7 @@ import { detectLayout, SelectorResolver } from './selector.js';
 import { bootOverlay, injectStyles } from './styles.js';
 import { createToast, type Toast } from './toast.js';
 import { readUnread } from './unread.js';
+import { readStoryRings } from './stories.js';
 
 export const CORE_VERSION = '0.1.0';
 
@@ -49,6 +51,10 @@ export type BootOptions = {
   loggedIn?: () => boolean;
   /** Initial pin, for a full document load that came from a DM. */
   initialPin?: string | null;
+  initialStoryUser?: string | null;
+  initialStoryUsers?: string[];
+  /** Extension persists this per tab before a full story load, never to disk. */
+  selectStory?: (user: string, users: string[]) => Promise<void>;
 };
 
 export type Booted = {
@@ -92,11 +98,6 @@ function defaultPost(win: Window): (message: PageMessage) => void {
 }
 
 function guessLoggedIn(doc: Document, win: Window): boolean {
-  try {
-    if (/ds_user_id=/.test(doc.cookie)) return true;
-  } catch {
-    /* cookies can be blocked */
-  }
   if (doc.querySelector('a[href^="/direct/inbox/"]')) return true;
   if (doc.querySelector('input[name="username"]')) return false;
   // Assume a session: an unknown route is then blocked rather than allowed.
@@ -110,6 +111,14 @@ export function boot(options: BootOptions = {}): Booted {
 
   let settings: Settings = mergeSettings(options.settings, DEFAULT_SETTINGS);
   let pin: string | null = options.initialPin ?? null;
+  let storyUsers = Array.isArray(options.initialStoryUsers) ? options.initialStoryUsers.slice(0, 30).filter((user) => typeof user === 'string' && storyUserForPath(`/stories/${user}/`)) : [];
+  const initialUser = typeof options.initialStoryUser === 'string' && storyUserForPath(`/stories/${options.initialStoryUser}/`)
+    ? options.initialStoryUser.toLowerCase() : null;
+  const currentUser = storyUserForPath(win.location.href);
+  let storyUser = currentUser && initialUser && (currentUser === initialUser ||
+    (settings.storiesAutoAdvance && storyUsers.some((user) => user.toLowerCase() === currentUser))) ? initialUser : null;
+  let stories: StoryRing[] = [];
+  let lastStories = '';
 
   const resolver = new SelectorResolver(detectLayout(win));
   const toast: Toast = createToast(win);
@@ -152,6 +161,7 @@ export function boot(options: BootOptions = {}): Booted {
         resolver,
         getSettings: () => settings,
         isLoggedIn,
+        getStoryUser: () => storyUser,
       });
     } catch {
       /* cosmetic only */
@@ -167,6 +177,7 @@ export function boot(options: BootOptions = {}): Booted {
       // a late-painted nav leaves the Profile tab with no target.
       publishAccount();
       publishUnread();
+      publishStories();
     } catch {
       /* never break the page */
     }
@@ -188,6 +199,9 @@ export function boot(options: BootOptions = {}): Booted {
           win,
           layout: () => resolver.currentLayout,
           labels: () => settings.navLabels,
+          getStories: () => stories,
+          storiesEnabled: () => settings.allowStories,
+          onOpenStory: (user) => { void openStory(user); },
           onNavigate: (tab: TabId) => {
             const target = tab === 'profile' ? profilePath(doc) : tabPath(tab);
             if (!target) return;
@@ -215,6 +229,42 @@ export function boot(options: BootOptions = {}): Booted {
     win.location.assign(path);
   }
 
+  async function openStory(user: string): Promise<void> {
+    if (!settings.allowStories || !storyUserForPath(`/stories/${user}/`)) return;
+    if (host === 'ios') {
+      // The native host updates its injection options before starting the load.
+      post({ v: 1, type: 'di:story', user });
+      return;
+    }
+    try {
+      storyUsers = stories.map((ring) => ring.username);
+      await options.selectStory?.(user, storyUsers);
+      storyUser = user.toLowerCase();
+      navigate(`/stories/${user}/`);
+    } catch {
+      toast.show('Couldn’t open this story. Please try again.');
+    }
+  }
+
+  function onStoryClick(event: Event): void {
+    if (event.defaultPrevented || !settings.allowStories) return;
+    // Never repin an automatic transition or a next-person tap in the viewer.
+    if (storyUserForPath(win.location.href)) return;
+    const anchor = (event.target as Element | null)?.closest?.('a[href]');
+    if (!anchor) return;
+    let url: URL;
+    try { url = new URL(anchor.getAttribute('href') ?? '', win.location.href); }
+    catch { return; }
+    if (url.origin !== win.location.origin) return;
+    const user = storyUserForPath(url.href);
+    if (!user) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    void openStory(user);
+  }
+
+  doc.addEventListener('click', onStoryClick, true);
+
   function profilePath(doc: Document): string | null {
     // Read the logged-in username from the page's own links; we never touch
     // storage or credentials for this.
@@ -231,6 +281,16 @@ export function boot(options: BootOptions = {}): Booted {
   let lastAccount: string | null | undefined;
   let lastSignedIn: boolean | undefined;
   let lastUnread = -1;
+
+  function publishStories(): void {
+    const next = readStoryRings(doc);
+    const key = JSON.stringify(next);
+    if (key === lastStories) return;
+    lastStories = key;
+    stories = next;
+    post({ v: 1, type: 'di:stories', stories });
+    nav?.refreshStories();
+  }
 
   /**
    * The signed-in username, read from a profile link that Instagram already
@@ -300,6 +360,7 @@ export function boot(options: BootOptions = {}): Booted {
     nav?.sync(win.location.href);
     publishAccount();
     publishUnread();
+    publishStories();
   }
 
   const guard: RouteGuard = installRouteGuard({
@@ -307,6 +368,8 @@ export function boot(options: BootOptions = {}): Booted {
     getSettings: () => settings,
     isLoggedIn,
     getPin: () => pin,
+    getStoryUser: () => storyUser,
+    getStoryUsers: () => storyUsers,
     beforeCheck: (target) => {
       try {
         armFromTransition(target);
@@ -333,6 +396,7 @@ export function boot(options: BootOptions = {}): Booted {
   function handleRouteChange(): void {
     try {
       const path = normalizePath(win.location.href);
+      if (!storyUserForPath(path)) { storyUser = null; storyUsers = []; }
       const id = reelIdForPath(path);
       // Ids are compared case-insensitively: the pin keeps the id as written in
       // the URL, while the normalised path is lowercased.
@@ -373,6 +437,12 @@ export function boot(options: BootOptions = {}): Booted {
         restoreRemovals(doc);
         observer.flush();
         cleanupNow();
+        if (!settings.allowStories) storyUser = null;
+        guard.check();
+        nav?.refreshStories();
+        break;
+      case 'di:story':
+        storyUser = message.user?.toLowerCase() ?? null;
         break;
       case 'di:navigate':
         navigate(message.path);
@@ -420,6 +490,9 @@ export function boot(options: BootOptions = {}): Booted {
       restoreRemovals(doc);
       observer.flush();
       cleanupNow();
+      if (!settings.allowStories) storyUser = null;
+      guard.check();
+      nav?.refreshStories();
     },
     setPin: (id: string | null) => {
       pin = id;
@@ -445,6 +518,7 @@ export function boot(options: BootOptions = {}): Booted {
         nav?.destroy();
         toast.destroy();
         win.removeEventListener('message', onWindowMessage);
+        doc.removeEventListener('click', onStoryClick, true);
       } catch {
         /* ignore */
       }
@@ -460,3 +534,6 @@ export function boot(options: BootOptions = {}): Booted {
 
   return api;
 }
+
+export { whenRoot } from './styles.js';
+export { installRouteGuard } from './guard.js';

@@ -45,7 +45,8 @@ describe('hostVerdict', () => {
 
   it('blocks stories on a document load even from a DM', () => {
     expect(decide('/stories/alice/1/', '/direct/t/42/')).toBe('block');
-    expect(decide('/stories/alice/1/', '/direct/t/42/', { allowStories: true })).toBe('allow');
+    expect(decide('/stories/alice/1/', '/direct/t/42/', { allowStories: true })).toBe('block');
+    expect(hostVerdict('/stories/alice/1/', { settings: { ...DEFAULT_SETTINGS, allowStories: true }, loggedIn: true, storyUser: 'alice' }, '/direct/inbox/').action).toBe('allow');
   });
 
   it('blocks reels entirely in strict mode', () => {

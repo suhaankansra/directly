@@ -1,3 +1,5 @@
+import { useColorScheme } from 'react-native';
+
 export const colors = {
   bg: '#0b0b0e',
   surface: '#121216',
@@ -24,3 +26,10 @@ export const radius = {
   lg: 18,
   pill: 999,
 } as const;
+
+export type Palette = { [K in keyof typeof colors]: string };
+const light: Palette = {
+  bg: '#f5f5fa', surface: '#ffffff', surfaceRaised: '#ffffff', border: '#d7d7df',
+  text: '#16161c', muted: '#5b5b69', accent: '#5842c4', accentSoft: '#e9e3fc', danger: '#b62835',
+};
+export function useColors(): Palette { return useColorScheme() === 'light' ? light : colors; }

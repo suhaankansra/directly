@@ -17,15 +17,15 @@
 
 ## 1. Evidence
 
-### 1.1 From the video teardown (Phase 1)
+### 1.1 Directly's architectural requirements
 
-| Clue | What it rules in | What it rules out |
-|---|---|---|
-| "Use the app" banner with ✕ (§1.6, F30) | Instagram's **mobile-web** app-install prompt is being rendered | A native messaging UI; the native iOS Instagram app |
-| DM inbox and notifications are byte-for-byte IG web layouts (F13, F27) | The page is `www.instagram.com` itself, restyled | A custom client drawing its own message list |
-| Purple outgoing bubbles, deleted bottom nav (F5, F7) | Styling is **injected over** someone else's DOM | A settings switch, a themed build of IG |
-| Reels screen crosses out with a red ✕ (§1.8) | Blocking is **navigation-level**, not just cosmetic | Hiding buttons alone (a route reachable by URL would still work) |
-| Swipe-up on a reel does nothing (F25) | Gesture **and** route are both being contained | A single CSS hide |
+| Requirement | Architectural consequence |
+|---|---|
+| Keep Instagram's own authenticated inbox and composer | Use the real page in a native WebView or a browser extension. |
+| Keep one local session | Reuse one mounted WebView; do not proxy login or credentials. |
+| Always block Feed, Explore and endless Reels | Share URL rules between host navigation and the injected guard. |
+| Allow one deliberate media item | Pin the selected item and contain next-item navigation and gestures. |
+| Preserve messages when cosmetic selectors change | Fail open for cleanup and protect message surfaces structurally. |
 
 ### 1.2 Verified ecosystem facts
 
@@ -54,7 +54,7 @@ E8 is the only claim in this document that could sink the iOS design, and I am n
 | A4 | **Official Meta APIs** (Instagram Graph / Basic Display / Messaging) | ❌ doesn't do the job | Business/creator accounts only, requires app review, and no consumer DM inbox. There is no official API for "read my personal DMs and let me reply" for a consumer app. |
 | A5 | **JS bookmarklet / userscript** (Tampermonkey) | ⚠️ works, rejected as the product | Technically identical to our core, and it would need zero store review — but it cannot be an App Store app, cannot be sold or supported, and on iOS requires an app that can run userscripts anyway. Kept as an internal debug harness only. |
 | A6 | **iOS Safari content blocker** (declarative rules) | ❌ insufficient alone | Content blockers can hide elements and block URLs, but they cannot patch `history.pushState`, cannot cancel a `touchmove`, and cannot keep one reel alive while killing the next. Fine as a supplementary defence; cannot be the product. |
-| A7 | **Native shell around Instagram mobile web in a WebView** | ✅ **selected for iOS** | It is the only lawful way to show a *logged-in* Instagram without us ever touching credentials: the user types their password into Instagram's own page, inside a WebKit cookie jar that we never read. It also matches every clue in §1.1. |
+| A7 | **Native shell around Instagram mobile web in a WebView** | ✅ **selected for iOS** | It is the only lawful way to show a *logged-in* Instagram without us ever touching credentials: the user types their password into Instagram's own page, inside a WebKit cookie jar that we never read. It retains the page and session without reconstructing messages. |
 | A8 | **Browser extension on instagram.com** | ✅ **selected for web** | Runs on the real origin, so no framing and no proxy: same cookies as the user's own browser session, and full DOM access to apply the same blocking. E1 makes it the *only* legal web route. |
 
 So: **A7 for iPhone, A8 for phone/desktop web, sharing one core.** That is also why the iOS app can ship the Safari extension inside it (E3): one App Store download gives the DMs-only app and DMs-only Instagram in Safari.
@@ -299,7 +299,7 @@ Rules that keep this policy-safe (E7): the JSON may only contain **keys we shipp
 
 | Option | What it does | Cost | Fit |
 |---|---|---|---|
-| **P1 — Settings + focus lock (recommended)** | Account row, Log out, strict mode (no reels from DMs at all), allow-stories toggle, a **lock timer** (e.g. "lock in 15 min" → at expiry, DMs stay but the app shows a calm full-screen "Done for now" card with an unlock-in-60-seconds escape hatch), privacy statement, version, "report a broken screen" | Medium: timer state + one native screen | Matches the padlock metaphor literally, gives the tab a reason to exist, and the timer is the retention hook the reference app hints at but never shows |
+| **P1 — Settings + focus lock (recommended)** | Account row, Log out, strict mode (no reels from DMs at all), allow-stories toggle, a **lock timer** (e.g. "lock in 15 min" → at expiry, DMs stay but the app shows a calm full-screen "Done for now" card with an unlock-in-60-seconds escape hatch), privacy statement, version, "report a broken screen" | Medium: timer state + one native screen | Keeps focus preferences and account actions accessible; the timer is a separate, unimplemented option |
 | **P2 — Settings + logout only** | Plain settings page | Low | Honest, minimal, but the icon promises more than it delivers |
 | **P3 — Paywall** | Free: blocking. Paid: strict mode, stories toggle, timer | Medium + commerce | Monetisable, but a paywall behind a padlock in a screen-time app invites App Store scrutiny of the value proposition, and it is the least defensible of the three at launch |
 
@@ -378,7 +378,7 @@ Same schema, same defaults, same validation on both (`settings.ts` exports `merg
 
 ## 16. Phase 2 exit criteria
 
-- [x] Evidence table, with the video clues and seven verified ecosystem facts (E1–E7) and one honestly unresolved (E8).
+- [x] Requirements table and seven recorded ecosystem facts (E1–E7) and one honestly unresolved (E8).
 - [x] Eight candidate architectures weighed; six rejected with reasons; none of the rejections relies on "it's hard".
 - [x] Component diagram covering iOS app, extension and website, plus the repo layout Phase 4 will build.
 - [x] Full allow/block/conditional route table with matching semantics and the username-vs-reserved-word trap called out.

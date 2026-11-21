@@ -16,8 +16,10 @@
     </header>
 
     <main>
+      <p id="saveStatus" role="status" aria-live="polite"></p>
       <section class="card">
-        <h2>What you keep</h2>
+        <h2>Focus controls</h2>
+        <p class="note">Feed, Explore, and endless Reels: always blocked.</p>
         <label class="row">
           <input type="checkbox" id="allowReelsFromDms" />
           <span>
@@ -29,8 +31,12 @@
           <input type="checkbox" id="allowStories" />
           <span>
             <strong>Stories</strong>
-            <em>Off by default. A story session is an endless tap.</em>
+            <em>Off by default. Choose one person at a time.</em>
           </span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="storiesAutoAdvance" />
+          <span><strong>Stories auto-advance</strong><em id="storyContinuationHint">Continue only to people already in the available story list. Off by default.</em></span>
         </label>
       </section>
 
@@ -47,7 +53,7 @@
           <input type="checkbox" id="navLabels" />
           <span>
             <strong>Labels under the tabs</strong>
-            <em>DMs, Activity, Profile, Lock.</em>
+            <em>Chats, Stories, Activity, Profile, More.</em>
           </span>
         </label>
         <label class="row">

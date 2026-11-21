@@ -19,7 +19,7 @@ export const INBOX_PATH = '/direct/inbox/';
 export const ACTIVITY_PATH = '/accounts/activity/';
 
 export type Layout = 'mobile' | 'desktop';
-export type TabId = 'inbox' | 'activity' | 'profile' | 'lock';
+export type TabId = 'inbox' | 'stories' | 'activity' | 'profile' | 'more';
 
 export type BlockReason =
   | 'home-feed'
@@ -29,6 +29,7 @@ export type BlockReason =
   | 'not-pinned'
   | 'reels-disabled'
   | 'stories-disabled'
+  | 'story-not-pinned'
   | 'signup'
   | 'unknown-route';
 
@@ -39,6 +40,14 @@ export type Verdict =
 export type RouteContext = {
   /** The single reel/post id currently opened from a DM, if any (D012). */
   pinId?: string | null;
+  /**
+   * The one friend whose story the user chose from our Stories list. Stories
+   * stay off by default; when on, only this handle's story is allowed until
+   * `storiesAutoAdvance` is enabled (D033).
+   */
+  storyUser?: string | null;
+  /** People already exposed in the story list; never authorize a guessed next user. */
+  storyUsers?: readonly string[];
   settings: Settings;
   /** Whether a session exists. Only used for the unknown-route fallback. */
   loggedIn: boolean;
@@ -235,7 +244,18 @@ export function routeVerdict(rawUrl: string, ctx: RouteContext): Verdict {
 
     case 'stories': {
       if (!ctx.settings.allowStories) return block('stories-disabled', path);
-      return allow('stories', path);
+      // Everything after `/stories/<handle>/` is Instagram's own viewer. The
+      // handle is the only part we can police, so it is the boundary: one chosen
+      // friend, unless the user deliberately turned auto-advance on.
+      const handle = seg[1];
+      if (!handle || !/^[a-z0-9._]{1,30}$/.test(handle) ||
+          ['highlights', 'archive', 'stories', 'explore'].includes(handle)) {
+        return block('unknown-route', path);
+      }
+      const pinned = typeof ctx.storyUser === 'string' ? ctx.storyUser.toLowerCase() : null;
+      if (pinned !== null && handle === pinned) return allow('pinned-story', path);
+      if (pinned && ctx.settings.storiesAutoAdvance && ctx.storyUsers?.some((user) => user.toLowerCase() === handle)) return allow('listed-story', path);
+      return block('story-not-pinned', path);
     }
 
     // Your own stories archive, linked from your profile. Same switch as any
@@ -296,6 +316,14 @@ export function routeVerdict(rawUrl: string, ctx: RouteContext): Verdict {
   return ctx.loggedIn ? block('unknown-route', path) : allow('logged-out', path);
 }
 
+/** A person in a story viewer URL, never an aggregate or a suggested tray. */
+export function storyUserForPath(rawUrl: string): string | null {
+  const seg = segments(normalizePath(rawUrl));
+  const user = seg[1];
+  if (seg[0] !== 'stories' || !user || !/^[a-z0-9._]{1,30}$/.test(user)) return null;
+  return ['highlights', 'archive', 'stories', 'explore'].includes(user) ? null : user;
+}
+
 /** Convenience: does this URL get blocked? */
 export function isBlocked(rawUrl: string, ctx: RouteContext): boolean {
   return routeVerdict(rawUrl, ctx).action === 'block';
@@ -315,6 +343,8 @@ export function tabForPath(rawUrl: string): TabId | null {
   const first = seg[0];
 
   if (first === 'direct') return 'inbox';
+  if (first === 'stories') return 'stories';
+  if (first === 'archive' && seg[1] === 'stories') return 'stories';
   if (first === 'accounts' && seg[1] === 'activity') return 'activity';
   if (first === undefined) return null;
   if (RESERVED.has(first)) return null;
@@ -331,8 +361,12 @@ export function pathForTab(tab: TabId, username?: string | null): string {
       return ACTIVITY_PATH;
     case 'profile':
       return username ? `/${username}/` : INBOX_PATH;
-    case 'lock':
-      return INBOX_PATH; // the Lock tab is a native/extension surface, not a route
+    case 'stories':
+      // The Stories tab is a native list of rings; a story is opened per friend
+      // from that list, never by guessing a handle here.
+      return INBOX_PATH;
+    case 'more':
+      return INBOX_PATH; // the More tab is a native/extension surface, not a route
   }
 }
 

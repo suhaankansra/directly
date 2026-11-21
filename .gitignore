@@ -23,3 +23,24 @@ apps/ios/dist/
 .env
 .env.*
 !.env.example
+
+# Private development/reference material: never part of a normal release commit.
+/.freebuff/
+/.freebuff-handoff/
+/.local-reference/
+/local-reference/
+/local-backups/
+/reference-recordings/
+/master-prompts/
+/exports/
+/backups/
+*.[mM][pP]4
+*.[mM][oO][vV]
+*.[wW][eE][bB][mM]
+/*[Pp][Rr][Oo][Mm][Pp][Tt]*.md
+/*[Hh][Aa][Nn][Dd][Oo][Ff][Ff]*.md
+/*[Cc][Oo][Nn][Vv][Ee][Rr][Ss][Aa][Tt][Ii][Oo][Nn]*.md
+/*[Tt][Rr][Aa][Nn][Ss][Cc][Rr][Ii][Pp][Tt]*.md
+*[Mm][Aa][Ss][Tt][Ee][Rr]*[Pp][Rr][Oo][Mm][Pp][Tt]*.md
+*[Hh][Aa][Nn][Dd][Oo][Ff][Ff]*.md
+*[Tt][Rr][Aa][Nn][Ss][Cc][Rr][Ii][Pp][Tt]*.md

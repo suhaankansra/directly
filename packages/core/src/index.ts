@@ -16,6 +16,7 @@ export {
   reelIdForPath,
   routeVerdict,
   tabForPath,
+  storyUserForPath,
   type BlockReason,
   type Layout,
   type RouteContext,
@@ -38,6 +39,7 @@ export {
   PROTOCOL_VERSION,
   type HostMessage,
   type PageMessage,
+  type StoryRing,
 } from './bridge.js';
 
 export { hostVerdict, type HostDecision } from './host.js';

@@ -6,9 +6,9 @@ Explore — you can still watch the one reel a friend sent you, and then you sto
 Two surfaces, one shared core:
 
 - **iOS app** (`apps/ios`) — an Expo/React Native shell around Instagram's own mobile web in a single
-  WKWebView, with a native four-tab bar.
+  WKWebView, with a native five-tab bar.
 - **Browser extension** (`apps/extension`) — MV3, runs on `instagram.com` only, same blocking logic,
-  plus a four-item nav that replaces Instagram's.
+  plus a five-item nav that replaces Instagram's.
 - **Website** (`apps/web`) — static landing, help and privacy pages. It never shows Instagram; it
   points you at the app or the extension.
 
@@ -24,7 +24,7 @@ Node 20+ and pnpm 10+ (`packageManager` in the root manifest is pnpm 12).
 ```bash
 pnpm install
 pnpm build          # core → extension → web
-pnpm test           # 120 unit tests (routes, guard, reel lock, cleanup, protocol)
+pnpm test           # 205 unit tests (routes, guard, stories, reel lock, cleanup, protocol)
 pnpm typecheck      # core, extension, web
 ```
 
@@ -139,7 +139,7 @@ video looped. Blocking fails closed; cosmetic hiding fails open.
 
 | File | What it holds |
 |---|---|
-| [01-teardown.md](docs/01-teardown.md) | the reference recording restated as 36 features, screen map, allowed/blocked table, open questions |
+| [01-teardown.md](docs/01-teardown.md) | Directly identity, destinations, route protections, privacy and acceptance requirements |
 | [02-architecture.md](docs/02-architecture.md) | why this shape and not seven others, route model, guard, injection plan, reel lock, risks |
 | [03-findings.md](docs/03-findings.md) | verified headers and routes, what the fixture proved, the things only you can check |
 | [04-plan.md](docs/04-plan.md) | the build order actually used, and where it deviates from the original plan |
@@ -159,3 +159,20 @@ logged-in Instagram session (see
 WKWebView (risk R1).
 
 Directly is an independent project, not affiliated with Instagram or Meta.
+
+## Phase 1 continuation (21 November 2026)
+
+Chats, Stories, Activity, Profile and More now share five destinations. More holds
+Focus controls; Feed, Explore and endless Reels remain permanently blocked.
+Stories and cross-person continuation default off. Only story links already
+rendered by Instagram populate the list; missing data produces an empty state.
+Continuation, when enabled, is limited to the captured list of people.
+
+The native UI follows device light/dark appearance, uses iOS glass where supported
+and opaque fallbacks elsewhere, and gives Android a tonal bar/large-window rail.
+A native rebuild is required after adding `expo-glass-effect`.
+
+**Device acceptance is still open:** real tray availability, same-URL story
+transitions, glass rendering, platform sheet/switch fidelity, accessibility and
+signed-in DM/reel regressions have not been verified in this working tree.
+See [the Phase 1 report](docs/38-v2-spec.md) for evidence and exact checks.

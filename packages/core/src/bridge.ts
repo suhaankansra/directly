@@ -14,8 +14,13 @@ export const PROTOCOL_VERSION = 1 as const;
 export const MAX_MESSAGE_BYTES = 4096;
 
 const MAX_PATH_LENGTH = 512;
+const MAX_STORY_RINGS = 30;
+
+/** One friend's story ring, as their handle only — never a story frame or media. */
+export type StoryRing = { username: string; seen: boolean };
 
 export type PageMessage =
+  | { v: 1; type: 'di:story'; user: string | null }
   | { v: 1; type: 'di:url'; path: string; layout: Layout; pinId: string | null }
   | { v: 1; type: 'di:blocked'; path: string; reason: string }
   | { v: 1; type: 'di:live'; layout: Layout }
@@ -23,7 +28,10 @@ export type PageMessage =
   | { v: 1; type: 'di:account'; username: string | null; signedIn: boolean }
   // A count, never a message: the host draws a badge and, while the app is
   // open, raises a local notification. Nothing about the conversation is sent.
-  | { v: 1; type: 'di:unread'; count: number };
+  | { v: 1; type: 'di:unread'; count: number }
+  // Only handles, so our Stories tab can list the rings the page already
+  // renders. No story media, captions or viewer state leave the page.
+  | { v: 1; type: 'di:stories'; stories: StoryRing[] };
 
 export type HostMessage =
   | { v: 1; type: 'di:settings'; settings: Settings }
@@ -32,9 +40,11 @@ export type HostMessage =
   // Requests with no payload. Both act on the page the user is looking at;
   // nothing about an account travels in either direction.
   | { v: 1; type: 'di:account-menu' }
-  | { v: 1; type: 'di:open-profile' };
+  | { v: 1; type: 'di:open-profile' }
+  // The single friend whose story the host is about to open, or null to clear.
+  | { v: 1; type: 'di:story'; user: string | null };
 
-const TAB_IDS = new Set<TabId>(['inbox', 'activity', 'profile', 'lock']);
+const TAB_IDS = new Set<TabId>(['inbox', 'stories', 'activity', 'profile', 'more']);
 const LAYOUTS = new Set<Layout>(['mobile', 'desktop']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -67,6 +77,12 @@ export function parsePageMessage(input: unknown): PageMessage | null {
   const path = safePath(value['path']);
 
   switch (type) {
+    case 'di:story': {
+      const user = value['user'];
+      if (user === null) return { v: 1, type: 'di:story', user: null };
+      if (typeof user !== 'string' || !/^[A-Za-z0-9._]{1,30}$/.test(user)) return null;
+      return { v: 1, type: 'di:story', user };
+    }
     case 'di:url': {
       if (!path) return null;
       const layout = value['layout'];
@@ -90,6 +106,20 @@ export function parsePageMessage(input: unknown): PageMessage | null {
         return null;
       }
       return { v: 1, type: 'di:unread', count };
+    }
+    case 'di:stories': {
+      const input = value['stories'];
+      if (!Array.isArray(input) || input.length > MAX_STORY_RINGS) return null;
+      const stories: StoryRing[] = [];
+      for (const entry of input) {
+        if (!isRecord(entry)) return null;
+        const username = entry['username'];
+        const seen = entry['seen'];
+        if (typeof username !== 'string' || !/^[A-Za-z0-9._]{1,30}$/.test(username)) return null;
+        if (typeof seen !== 'boolean') return null;
+        stories.push({ username, seen });
+      }
+      return { v: 1, type: 'di:stories', stories };
     }
     case 'di:live': {
       const layout = value['layout'];
@@ -150,6 +180,12 @@ export function parseHostMessage(input: unknown): HostMessage | null {
       return { v: 1, type: 'di:open-profile' };
     case 'di:account-menu':
       return { v: 1, type: 'di:account-menu' };
+    case 'di:story': {
+      const user = value['user'];
+      if (user === null) return { v: 1, type: 'di:story', user: null };
+      if (typeof user !== 'string' || !/^[A-Za-z0-9._]{1,30}$/.test(user)) return null;
+      return { v: 1, type: 'di:story', user };
+    }
     default:
       return null;
   }

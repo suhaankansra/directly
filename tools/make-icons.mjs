@@ -1,7 +1,8 @@
 /**
  * Generates the Directly icon set: a purple rounded square with a white
  * speech bubble. Written by hand as a small PNG encoder so the repo needs no
- * image toolchain, and so the icon is provably ours (no traced asset).
+ * image toolchain. The drawing geometry is included below for review;
+ * this is not a claim of trademark clearance.
  *
  *   node tools/make-icons.mjs
  *

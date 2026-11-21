@@ -9,7 +9,7 @@
  * We never remove the message composer, a thread, or anything a user typed.
  */
 
-import { normalizePath, reelIdForPath, routeVerdict, type RouteContext } from '../routes.js';
+import { normalizePath, reelIdForPath, routeVerdict, storyUserForPath, type RouteContext } from '../routes.js';
 import type { Settings } from '../settings.js';
 import type { SelectorResolver } from './selector.js';
 
@@ -18,6 +18,7 @@ export type CleanupDeps = {
   resolver: SelectorResolver;
   getSettings: () => Settings;
   isLoggedIn: () => boolean;
+  getStoryUser?: () => string | null;
   onRemoved?: (label: string) => void;
 };
 
@@ -121,7 +122,7 @@ export function runCleanup(deps: CleanupDeps): void {
   // 1. Hide Instagram's own navigation: our four tabs (native bar on iOS, our
   //    injected bar in the extension) are the only navigation now.
   const navSelectors = resolver.currentLayout === 'desktop' ? ['sidebar'] : ['bottomNav'];
-  const navContext: RouteContext = { settings, loggedIn: deps.isLoggedIn(), pinId: null };
+  const navContext: RouteContext = { settings, loggedIn: deps.isLoggedIn(), pinId: null, storyUser: deps.getStoryUser?.() };
   for (const key of navSelectors) {
     for (const el of resolver.all(doc, key)) {
       // Hardening, first line of defence: never hide a container holding the
@@ -160,6 +161,7 @@ export function runCleanup(deps: CleanupDeps): void {
     settings,
     loggedIn: deps.isLoggedIn(),
     pinId: null,
+    storyUser: deps.getStoryUser?.(),
   };
   const anchors = Array.from(doc.querySelectorAll('a[href]'));
   for (const anchor of anchors) {
@@ -174,6 +176,9 @@ export function runCleanup(deps: CleanupDeps): void {
     }
     if (!absolute.includes('instagram.com') && !href.startsWith('/')) continue;
     const path = normalizePath(absolute);
+    // These are deliberate selection targets. The guard pins them on a tap;
+    // hiding every unselected friend would remove the entire Stories tray.
+    if (settings.allowStories && storyUserForPath(path)) continue;
     const inThread = anchor.closest("[role='dialog'], article, main");
     // A single post or reel someone sent you is the one thing this app exists to
     // keep: the guard arms a pin when it is tapped, so the link must stay
@@ -188,7 +193,7 @@ export function runCleanup(deps: CleanupDeps): void {
   }
 
   // 3. App-install banners and upsells ("Use the app" is the mobile-web nag
-  //    visible in the reference recording).
+  //    shown by Instagram’s mobile website).
   const candidates = Array.from(doc.querySelectorAll('div, span, section, h2, p, a'));
   for (const el of candidates) {
     if (el.children.length > 0) continue;

@@ -13,6 +13,7 @@ type CtxOverrides = {
   settings?: Partial<Settings>;
   loggedIn?: boolean;
   pinId?: string | null;
+  storyUser?: string | null;
 };
 
 function ctx(over: CtxOverrides = {}): RouteContext {
@@ -20,6 +21,7 @@ function ctx(over: CtxOverrides = {}): RouteContext {
     settings: { ...DEFAULT_SETTINGS, ...(over.settings ?? {}) },
     loggedIn: over.loggedIn ?? true,
     pinId: over.pinId ?? null,
+    storyUser: over.storyUser ?? null,
   };
 }
 
@@ -173,8 +175,8 @@ describe('stories', () => {
     });
   });
 
-  it('allows stories when the setting is on', () => {
-    expect(action('/stories/alice/123/', ctx({ settings: { allowStories: true } }))).toBe('allow');
+  it('allows the selected friend when stories are on', () => {
+    expect(action('/stories/alice/123/', ctx({ storyUser: 'alice', settings: { allowStories: true } }))).toBe('allow');
   });
 });
 

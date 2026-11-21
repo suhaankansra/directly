@@ -95,10 +95,10 @@ describe('history patches', () => {
     expect(h.navigate).toHaveBeenCalledWith('/direct/inbox/');
   });
 
-  it('rewrites the URL on a blocked replaceState without a reload', () => {
+  it('unloads the blocked page on replaceState', () => {
     window.history.replaceState({}, '', '/explore/tags/cats/');
     expect(h.onBlocked).toHaveBeenCalled();
-    expect(h.navigate).not.toHaveBeenCalled();
+    expect(h.navigate).toHaveBeenCalledWith('/direct/inbox/');
     expect(window.location.pathname).toBe('/direct/inbox/');
   });
 

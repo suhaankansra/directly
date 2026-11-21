@@ -1,10 +1,11 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import type { Settings } from '@directly/core';
 
 import { clearDiagnostics, clock, reportLines, useDiagnostics } from '../lib/diagnostics';
-import { colors, radius, spacing } from '../theme';
+import { FocusControls } from './FocusControls';
+import { useColors, type Palette, radius, spacing } from '../theme';
 
 type Props = {
   settings: Settings;
@@ -29,35 +30,6 @@ type Props = {
   version: string;
 };
 
-type Row = {
-  key: keyof Settings;
-  title: string;
-  detail: string;
-};
-
-const ROWS: Row[] = [
-  {
-    key: 'allowReelsFromDms',
-    title: 'One reel or post from a DM',
-    detail: 'Opens what a friend sent. Swiping to the next one stays off.',
-  },
-  {
-    key: 'allowStories',
-    title: 'Stories',
-    detail: 'Off by default — a story session is an endless tap.',
-  },
-  {
-    key: 'showBlockToast',
-    title: 'Explain redirects',
-    detail: 'Say “that’s not here” when something is blocked.',
-  },
-  {
-    key: 'debug',
-    title: 'Debug logging',
-    detail: 'Local diagnostics only. Nothing leaves the phone.',
-  },
-];
-
 export function LockScreen({
   settings,
   username,
@@ -74,6 +46,9 @@ export function LockScreen({
   onSignOut,
   version,
 }: Props) {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+  const [focusOpen, setFocusOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   // Recorded whether or not the switch is on, so turning it on after something
   // went wrong still shows what led there; the switch decides what is shown.
@@ -135,8 +110,48 @@ export function LockScreen({
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>Lock</Text>
+      <Text accessibilityRole="header" style={styles.title}>More</Text>
       <Text style={styles.subtitle}>What this app is allowed to do.</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Focus</Text>
+        <Text style={styles.note}>Feed, Explore, and endless Reels are always blocked.</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel="Focus controls" onPress={() => setFocusOpen(true)} style={styles.button}>
+          <Text style={styles.buttonText}>Focus controls</Text>
+        </Pressable>
+      </View>
+      <FocusControls visible={focusOpen} settings={settings} onChange={onChange} onClose={() => setFocusOpen(false)} />
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Alerts</Text>
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>New messages</Text>
+            <Text style={styles.note}>
+              {alertsBlocked
+                ? 'Notifications are off for Directly in your device settings. This switch cannot override that.'
+                : 'A banner while Directly is open. Instagram’s push cannot reach a web view, and there is no server here to forward it.'}
+            </Text>
+          </View>
+          <Switch
+            accessibilityLabel="New message alerts"
+            value={alerts}
+            disabled={alertsBlocked}
+            onValueChange={onAlertsChange}
+            trackColor={{ false: '#2a2a33', true: colors.accentSoft }}
+            thumbColor={alerts ? colors.accent : '#7a7a86'}
+            ios_backgroundColor="#2a2a33"
+          />
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Preferences</Text>
+        <Text style={styles.note}>Appearance follows your device’s light or dark setting.</Text>
+        <View style={styles.row}><View style={styles.rowText}><Text style={styles.rowTitle}>Explain redirects</Text><Text style={styles.note}>Explain when a blocked page returns to Chats.</Text></View>
+          <Switch accessibilityLabel="Explain redirects" value={settings.showBlockToast} onValueChange={(value) => onChange({ ...settings, showBlockToast: value })} /></View>
+        <View style={styles.row}><View style={styles.rowText}><Text style={styles.rowTitle}>Debug logging</Text><Text style={styles.note}>Local diagnostics only. Nothing leaves the phone.</Text></View>
+          <Switch accessibilityLabel="Debug logging" value={settings.debug} onValueChange={(value) => onChange({ ...settings, debug: value })} /></View>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Account</Text>
@@ -180,49 +195,6 @@ export function LockScreen({
             </Pressable>
           </>
         ) : null}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Alerts</Text>
-        <View style={styles.row}>
-          <View style={styles.rowText}>
-            <Text style={styles.rowTitle}>New messages</Text>
-            <Text style={styles.note}>
-              {alertsBlocked
-                ? 'Notifications are off for Directly in your device settings. This switch cannot override that.'
-                : 'A banner while Directly is open. Instagram’s push cannot reach a web view, and there is no server here to forward it.'}
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="New message alerts"
-            value={alerts}
-            disabled={alertsBlocked}
-            onValueChange={onAlertsChange}
-            trackColor={{ false: '#2a2a33', true: colors.accentSoft }}
-            thumbColor={alerts ? colors.accent : '#7a7a86'}
-            ios_backgroundColor="#2a2a33"
-          />
-        </View>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>What you keep</Text>
-        {ROWS.map((row, index) => (
-          <View key={row.key} style={[styles.row, index > 0 && styles.rowDivided]}>
-            <View style={styles.rowText}>
-              <Text style={styles.rowTitle}>{row.title}</Text>
-              <Text style={styles.note}>{row.detail}</Text>
-            </View>
-            <Switch
-              accessibilityLabel={row.title}
-              value={settings[row.key]}
-              onValueChange={(value) => onChange({ ...settings, [row.key]: value })}
-              trackColor={{ false: '#2a2a33', true: colors.accentSoft }}
-              thumbColor={settings[row.key] ? colors.accent : '#7a7a86'}
-              ios_backgroundColor="#2a2a33"
-            />
-          </View>
-        ))}
       </View>
 
       {settings.debug ? (
@@ -277,7 +249,7 @@ export function LockScreen({
       ) : null}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Privacy</Text>
+        <Text style={styles.cardTitle}>Support</Text>
         <Text style={styles.note}>
           There is no account, no analytics and no server. The app changes what Instagram shows you;
           it does not read, store or send your messages, and it never automates anything on your
@@ -285,6 +257,10 @@ export function LockScreen({
         </Text>
       </View>
 
+      <View style={styles.buttons}>
+        <Pressable accessibilityRole="link" style={styles.button} onPress={() => void Linking.openURL('https://suhaankansra.github.io/directly/help.html')}><Text style={styles.buttonText}>Help</Text></Pressable>
+        <Pressable accessibilityRole="link" style={styles.button} onPress={() => void Linking.openURL('https://suhaankansra.github.io/directly/privacy.html')}><Text style={styles.buttonText}>Privacy policy</Text></Pressable>
+      </View>
       <Pressable onPress={onVersionTap} hitSlop={12} style={styles.versionTarget}>
         <Text style={styles.version}>Directly {version}</Text>
         {easterEgg ? (
@@ -295,14 +271,14 @@ export function LockScreen({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
-  content: { padding: spacing.lg, paddingBottom: spacing.xl * 2, gap: spacing.md },
+  content: { padding: spacing.lg, paddingBottom: 130, gap: spacing.md },
   title: { color: colors.text, fontSize: 30, fontWeight: '700', letterSpacing: -0.6 },
   subtitle: { color: colors.muted, fontSize: 13, marginTop: -spacing.sm },
   card: {
     // Glass surface: translucent fill, bright rim, soft cast shadow.
-    backgroundColor: 'rgba(23,23,28,0.72)',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: radius.lg,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.14)',

@@ -27,7 +27,7 @@ const INBOX_VIEW = `
     <h1 class="hdr">alice <span aria-hidden="true">▾</span></h1>
     <input class="search" placeholder="Search" />
     <ul class="threads">
-      <li><a href="/direct/t/42/" id="thread-42"><span class="avatar"></span> bob <em>You: yo wassup · 1d</em></a></li>
+      <li><a href="/direct/t/42/" id="thread-42"><span class="avatar"></span> bob <em>You: See you at six · 1d</em></a></li>
       <li><a href="/direct/t/43/" id="thread-43"><span class="avatar"></span> carol <em>Sent a reel</em></a></li>
     </ul>
   </div>`;

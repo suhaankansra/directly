@@ -1,102 +1,102 @@
-/**
- * Background worker: layer 1 of the route guard.
- *
- * The content script handles everything inside the page, but it never sees a
- * navigation that unloads the document — a real link click, a redirect after
- * login carrying `?next=/reels/`, or a pasted URL. `webNavigation` does, and
- * this is where those are stopped before Instagram renders them.
- *
- * Permissions used: `webNavigation` (one host), `storage`, `tabs` (to redirect a
- * blocked tab). Nothing else is requested, and no request body, header, message
- * or credential is ever read.
- */
+/** Full-load guard and ephemeral, per-tab story selection. No page content is stored. */
+import {
+  DEFAULT_SETTINGS, hostVerdict, mergeSettings, normalizePath, parseHostMessage,
+  parsePageMessage, storyUserForPath, type Settings,
+} from '@directly/core';
 
-import { DEFAULT_SETTINGS, hostVerdict, mergeSettings, normalizePath, type Settings } from '@directly/core';
-
-type TabPathMap = Map<number, string>;
-
-const tabPaths: TabPathMap = new Map();
+type StoryContext = { user: string | null; users: string[] };
+const emptyStory = (): StoryContext => ({ user: null, users: [] });
+const tabPaths = new Map<number, string>();
+const contexts = new Map<number, StoryContext>();
 const INBOX_URL = 'https://www.instagram.com/direct/inbox/';
-
-const chromeApi = (globalThis as unknown as { chrome?: typeof chrome; browser?: typeof chrome }).browser ??
+const SITE = /^https:\/\/(www\.)?instagram\.com\//;
+const api = (globalThis as unknown as { browser?: typeof chrome; chrome?: typeof chrome }).browser ??
   (globalThis as unknown as { chrome?: typeof chrome }).chrome;
 
-if (!chromeApi) {
-  // Nothing to do outside an extension context (e.g. if this file is imported by
-  // a test runner).
-} else {
-  const api = chromeApi;
+function validateContext(input: unknown): StoryContext {
+  if (!input || typeof input !== 'object') return emptyStory();
+  const raw = input as { user?: unknown; users?: unknown };
+  const selected = parseHostMessage({ v: 1, type: 'di:story', user: raw.user });
+  const list = parsePageMessage({ v: 1, type: 'di:stories', stories: raw.users });
+  if (selected?.type !== 'di:story' || list?.type !== 'di:stories') return emptyStory();
+  if (selected.user && !storyUserForPath(`/stories/${selected.user}/`)) return emptyStory();
+  return { user: selected.user, users: list.stories.map((ring) => ring.username) };
+}
 
+if (api) {
   async function currentSettings(): Promise<Settings> {
-    try {
-      const stored = await api.storage.local.get('settings');
-      return mergeSettings(stored['settings'], DEFAULT_SETTINGS);
-    } catch {
-      return DEFAULT_SETTINGS;
+    try { return mergeSettings((await api!.storage.local.get('settings'))['settings']); }
+    catch { return DEFAULT_SETTINGS; }
+  }
+  async function selectedStory(tabId: number): Promise<StoryContext> {
+    const stored = await api!.storage.session?.get(`storyContext:${tabId}`);
+    const value = stored?.[`storyContext:${tabId}`];
+    return value === undefined ? contexts.get(tabId) ?? emptyStory() : validateContext(value);
+  }
+  async function saveStory(tabId: number, context: StoryContext): Promise<void> {
+    if (!context.user) {
+      contexts.delete(tabId);
+      await api!.storage.session?.remove(`storyContext:${tabId}`);
+    } else {
+      const serialized = { user: context.user, users: context.users.map((username) => ({ username, seen: false })) };
+      // Commit the in-memory fallback only after persistence succeeds.
+      await api!.storage.session?.set({ [`storyContext:${tabId}`]: serialized });
+      contexts.set(tabId, context);
     }
   }
+  function clearStory(tabId: number): void { void saveStory(tabId, emptyStory()).catch(() => undefined); }
 
   api.runtime.onInstalled.addListener(() => {
     void (async () => {
-      const stored = await api.storage.local.get('settings');
-      if (!stored['settings']) await api.storage.local.set({ settings: DEFAULT_SETTINGS });
-    })();
+      const stored = await api!.storage.local.get('settings');
+      if (!stored['settings']) await api!.storage.local.set({ settings: DEFAULT_SETTINGS });
+    })().catch(() => undefined);
   });
-
-  api.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-    const type = (message as { type?: string } | null)?.type;
-    if (type === 'di:open-settings') {
-      api.runtime.openOptionsPage();
-      sendResponse({ ok: true });
+  api.runtime.onMessage.addListener((message: unknown, sender, respond) => {
+    const type = (message as { type?: unknown } | null)?.type;
+    const tabId = sender.tab?.id;
+    const trusted = sender.id === api!.runtime.id && sender.frameId === 0 && SITE.test(sender.url ?? '');
+    if (trusted && tabId !== undefined && type === 'di:story-context') {
+      void selectedStory(tabId).then(respond).catch(() => respond(emptyStory()));
+      return true;
+    }
+    if (trusted && tabId !== undefined && type === 'di:story') {
+      if (storyUserForPath(sender.url ?? '')) { respond({ ok: false }); return false; }
+      const context = validateContext(message);
+      if (!context.user) { respond({ ok: false }); return false; }
+      void saveStory(tabId, context).then(() => respond({ ok: true })).catch(() => respond({ ok: false }));
+      return true;
+    }
+    if (type === 'di:open-settings' && sender.id === api!.runtime.id) {
+      void api!.runtime.openOptionsPage(); respond({ ok: true });
     }
     return false;
   });
+  api.tabs.onRemoved.addListener((tabId) => { tabPaths.delete(tabId); clearStory(tabId); });
 
-  function remember(tabId: number, url: string): void {
+  async function enforce(details: { frameId: number; tabId: number; url: string }): Promise<void> {
+    if (details.frameId !== 0 || !SITE.test(details.url)) return;
     try {
-      tabPaths.set(tabId, normalizePath(url));
-    } catch {
-      /* ignore */
-    }
-  }
-
-  api.tabs.onRemoved.addListener((tabId) => tabPaths.delete(tabId));
-
-  // SPA navigations never fire onBeforeNavigate; tracking them here keeps the
-  // "came from a DM" test honest for the next full load.
-  api.webNavigation.onHistoryStateUpdated.addListener((details) => {
-    if (details.frameId !== 0) return;
-    remember(details.tabId, details.url);
-  });
-
-  api.webNavigation.onBeforeNavigate.addListener((details) => {
-    if (details.frameId !== 0) return;
-    if (!/^https:\/\/(www\.)?instagram\.com\//.test(details.url)) return;
-
-    void (async () => {
-      const settings = await currentSettings();
-      const previous = tabPaths.get(details.tabId) ?? null;
-      const decision = hostVerdict(
-        details.url,
-        { settings, loggedIn: true, pinId: null },
-        previous,
-      );
-
+      const [settings, story] = await Promise.all([currentSettings(), selectedStory(details.tabId)]);
+      const decision = hostVerdict(details.url, {
+        settings, loggedIn: true, pinId: null, storyUser: story.user, storyUsers: story.users,
+      }, tabPaths.get(details.tabId) ?? null);
       if (decision.action === 'block') {
-        try {
-          await api.tabs.update(details.tabId, { url: INBOX_URL });
-        } catch {
-          /* the tab may have closed */
-        }
+        await api!.tabs.update(details.tabId, { url: INBOX_URL });
         return;
       }
-
-      remember(details.tabId, details.url);
-    })();
-  });
-
+      tabPaths.set(details.tabId, normalizePath(details.url));
+      if (!storyUserForPath(details.url)) clearStory(details.tabId);
+    } catch {
+      // A failed context read must never loosen story protection.
+      if (storyUserForPath(details.url)) await api!.tabs.update(details.tabId, { url: INBOX_URL }).catch(() => undefined);
+    }
+  }
+  api.webNavigation.onBeforeNavigate.addListener((details) => { void enforce(details); });
+  api.webNavigation.onHistoryStateUpdated.addListener((details) => { void enforce(details); });
   api.webNavigation.onCommitted.addListener((details) => {
     if (details.frameId !== 0) return;
-    remember(details.tabId, details.url);
+    tabPaths.set(details.tabId, normalizePath(details.url));
+    if (!storyUserForPath(details.url)) clearStory(details.tabId);
   });
 }

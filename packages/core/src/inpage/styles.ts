@@ -27,7 +27,7 @@ export const BUNDLED_CSS: ReadonlyArray<{ id: string; css: string }> = [
  * injection with it: no styles, no route guard, no cleanup. iOS already has the
  * document skeleton at document start, which is why this only broke on Android.
  */
-function whenRoot(doc: Document, fn: () => void): void {
+export function whenRoot(doc: Document, fn: () => void): void {
   if (doc.documentElement) {
     fn();
     return;

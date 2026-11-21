@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, ActivityIndicator, Animated, Easing, Platform, StyleSheet, Text, View } from 'react-native';
 
-import { colors, radius, spacing } from '../theme';
+import { useColors, type Palette, radius, spacing } from '../theme';
 import { Glass } from './Glass';
 
 type Props = {
@@ -23,6 +23,15 @@ const IOS = Platform.OS === 'ios';
  * on Android, so the material is built from translucent views instead.
  */
 export function LoadingSurface({ visible }: Props) {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+  const [reduceMotion, setReduceMotion] = useState(true);
+  useEffect(() => {
+    let alive = true;
+    void AccessibilityInfo.isReduceMotionEnabled().then((value) => { if (alive) setReduceMotion(value); });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => { alive = false; sub.remove(); };
+  }, []);
   const fade = useRef(new Animated.Value(0)).current;
   const pulse = useRef(new Animated.Value(0)).current;
   const sweep = useRef(new Animated.Value(0)).current;
@@ -33,16 +42,16 @@ export function LoadingSurface({ visible }: Props) {
     if (visible) setMounted(true);
     Animated.timing(fade, {
       toValue: visible ? 1 : 0,
-      duration: visible ? 120 : 180,
+      duration: reduceMotion ? 0 : visible ? 120 : 180,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished && !visible) setMounted(false);
     });
-  }, [fade, visible]);
+  }, [fade, visible, reduceMotion]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || reduceMotion) return;
     const breathe = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, {
@@ -61,10 +70,10 @@ export function LoadingSurface({ visible }: Props) {
     );
     breathe.start();
     return () => breathe.stop();
-  }, [pulse, visible]);
+  }, [pulse, visible, reduceMotion]);
 
   useEffect(() => {
-    if (!IOS || !visible) return;
+    if (!IOS || !visible || reduceMotion) return;
     const sheen = Animated.loop(
       Animated.sequence([
         Animated.timing(sweep, {
@@ -83,7 +92,7 @@ export function LoadingSurface({ visible }: Props) {
     );
     sheen.start();
     return () => sheen.stop();
-  }, [sweep, visible]);
+  }, [sweep, visible, reduceMotion]);
 
   if (!mounted) return null;
 
@@ -120,7 +129,7 @@ export function LoadingSurface({ visible }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   root: {
     position: 'absolute',
     top: 0,

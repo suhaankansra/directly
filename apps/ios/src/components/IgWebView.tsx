@@ -8,6 +8,8 @@ import {
   isMetaHost,
   normalizePath,
   tabForPath,
+  storyUserForPath,
+  type StoryRing,
   type Layout,
   type Settings,
   type TabId,
@@ -47,6 +49,11 @@ type Props = {
   onAccount: (username: string | null, signedIn: boolean) => void;
   /** Unread DMs, as a count only. */
   onUnread: (count: number) => void;
+  onStories: (stories: StoryRing[]) => void;
+  onStoryRequest: (user: string) => void;
+  storyUser: string | null;
+  storyUsers: string[];
+  bottomInset: number;
   onLoadingChange: (loading: boolean) => void;
   /**
    * Something the user tried that this app cannot do, in a sentence worth
@@ -94,6 +101,11 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
     onBlocked,
     onAccount,
     onUnread,
+    onStories,
+    onStoryRequest,
+    storyUser,
+    storyUsers,
+    bottomInset,
     onLoadingChange,
     onNotice,
     navigateTarget,
@@ -104,6 +116,10 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
   const webRef = useRef<WebViewCommands | null>(null);
   const lastPath = useRef<string>(INBOX_PATH);
   const pinRef = useRef<string | null>(initialPin);
+  const storyRef = useRef<string | null>(storyUser);
+  storyRef.current = storyUser;
+  const storyUsersRef = useRef(storyUsers);
+  storyUsersRef.current = storyUsers;
   const settingsRef = useRef<Settings>(settings);
   // Every load, not just the first: a tab tap is a full document load, and
   // Instagram paints its own logo before its app hydrates. Our surface has to be
@@ -125,7 +141,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         // The WebView's own history is the only back stack; the host cannot ask
         // "canGoBack" synchronously, so the caller treats false as "at the root".
         webRef.current?.goBack();
-        return lastPath.current !== INBOX_PATH;
+        return normalizePath(lastPath.current) !== normalizePath(INBOX_PATH);
       },
       navigate,
       openAccountMenu: () => {
@@ -206,7 +222,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
       if (target.unwrapped) {
         const viaShim = hostVerdict(
           target.url,
-          { settings: settingsRef.current, loggedIn: true, pinId: pinRef.current },
+          { settings: settingsRef.current, loggedIn: true, pinId: pinRef.current, storyUser: storyRef.current, storyUsers: storyUsersRef.current },
           lastPath.current,
         );
         if (viaShim.action === 'block') {
@@ -222,7 +238,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
 
       const decision = hostVerdict(
         url,
-        { settings: settingsRef.current, loggedIn: true, pinId: pinRef.current },
+        { settings: settingsRef.current, loggedIn: true, pinId: pinRef.current, storyUser: storyRef.current, storyUsers: storyUsersRef.current },
         lastPath.current,
       );
 
@@ -266,6 +282,11 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
           onAccount(message.username, message.signedIn);
           break;
         }
+        case 'di:story': {
+          if (message.user && !storyUserForPath(lastPath.current)) onStoryRequest(message.user);
+          break;
+        }
+        case 'di:stories': { onStories(message.stories); break; }
         case 'di:unread': {
           logEvent('unread', String(message.count));
           onUnread(message.count);
@@ -275,7 +296,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
           break;
       }
     },
-    [onAccount, onBlocked, onRoute, onUnread],
+    [onAccount, onBlocked, onRoute, onUnread, onStories, onStoryRequest],
   );
 
   const injectedBeforeLoad = injectionScript(inpageScript, {
@@ -283,6 +304,8 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
     showNav: false,
     settings,
     initialPin: pinRef.current,
+    initialStoryUser: storyUser,
+    initialStoryUsers: storyUsers,
   });
 
   // After load: re-apply the latest settings *and* pin. This covers the case
@@ -331,6 +354,7 @@ export const IgWebView = forwardRef<IgWebViewHandle, Props>(function IgWebView(
         // throws "String cannot be cast to Double" while creating the view.
         decelerationRate={0.998}
         contentInsetAdjustmentBehavior="never"
+        contentInset={{ top: 0, left: 0, right: 0, bottom: bottomInset }}
         setSupportMultipleWindows={false}
         javaScriptEnabled
         domStorageEnabled

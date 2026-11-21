@@ -15,7 +15,13 @@ export type Settings = {
    * When false ("strict mode"), reels/posts are blocked everywhere.
    */
   allowReelsFromDms: boolean;
-  /** Show text labels under our 4-item nav bar (extension only). */
+  /**
+   * Let Instagram advance from one friend's story to the next by itself.
+   * Off by default: the whole point of this app is that you stop after the
+   * person you meant to watch (D033).
+   */
+  storiesAutoAdvance: boolean;
+  /** Show text labels under our 5-item nav bar (extension only). */
   navLabels: boolean;
   /** Surface why a navigation was blocked in a small toast. */
   showBlockToast: boolean;
@@ -26,6 +32,7 @@ export type Settings = {
 export const DEFAULT_SETTINGS: Settings = {
   allowStories: false,
   allowReelsFromDms: true,
+  storiesAutoAdvance: false,
   navLabels: true,
   showBlockToast: true,
   debug: false,
@@ -34,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
 const BOOLEAN_KEYS: ReadonlyArray<keyof Settings> = [
   'allowStories',
   'allowReelsFromDms',
+  'storiesAutoAdvance',
   'navLabels',
   'showBlockToast',
   'debug',

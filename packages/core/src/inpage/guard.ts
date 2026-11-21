@@ -22,6 +22,9 @@ export type GuardDeps = {
   getSettings: () => Settings;
   isLoggedIn: () => boolean;
   getPin: () => string | null;
+  /** The one friend whose story is allowed, or null. */
+  getStoryUser?: () => string | null;
+  getStoryUsers?: () => readonly string[];
   onBlocked: (verdict: BlockedVerdict) => void;
   /**
    * Called with the candidate path *before* it is evaluated, so the host can
@@ -74,6 +77,10 @@ export function installRouteGuard(deps: GuardDeps): RouteGuard {
     get pinId() {
       return deps.getPin();
     },
+    get storyUsers() { return deps.getStoryUsers?.() ?? []; },
+    get storyUser() {
+      return deps.getStoryUser?.() ?? null;
+    },
   });
 
   function evaluate(rawUrl: string): Verdict {
@@ -124,10 +131,10 @@ export function installRouteGuard(deps: GuardDeps): RouteGuard {
         deps.beforeCheck?.(resolved);
         const verdict = evaluate(resolved);
         if (verdict.action === 'block') {
-          // Keep the address bar out of the blocked route without a reload (a
-          // reload here would fight Instagram's own state churn).
+          // Fix the address bar and unload the viewer. Merely changing the URL
+          // would leave Instagram free to render the blocked person.
           originalReplace(state, title, verdict.redirect);
-          deps.onBlocked(verdict);
+          goHome(verdict);
           return;
         }
       }

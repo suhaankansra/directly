@@ -18,11 +18,12 @@ export async function loadSettings(): Promise<Settings> {
   }
 }
 
-export async function saveSettings(settings: Settings): Promise<void> {
+export async function saveSettings(settings: Settings): Promise<boolean> {
   try {
     await AsyncStorage.setItem(KEY, JSON.stringify(settings));
+    return true;
   } catch {
-    // Storage failures must not break the app; settings simply revert on relaunch.
+    return false;
   }
 }
 
@@ -73,10 +74,11 @@ export async function loadAlerts(): Promise<boolean> {
   }
 }
 
-export async function saveAlerts(enabled: boolean): Promise<void> {
+export async function saveAlerts(enabled: boolean): Promise<boolean> {
   try {
     await AsyncStorage.setItem(ALERTS_KEY, enabled ? '1' : '0');
+    return true;
   } catch {
-    // Best effort: the switch reverts on the next launch rather than crashing.
+    return false;
   }
 }

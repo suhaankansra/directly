@@ -1,21 +1,25 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BackHandler, Platform, StyleSheet, Text, View } from 'react-native';
+import { BackHandler, Keyboard, Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   DEFAULT_SETTINGS,
   INBOX_PATH,
   pathForTab,
+  normalizePath,
   tabForPath,
   type Layout,
   type Settings,
   type TabId,
+  type StoryRing,
+  storyUserForPath,
 } from '@directly/core';
 
 import appConfig from './app.json';
 import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
 import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
+import { StoriesScreen } from './src/screens/StoriesScreen';
 import { LockScreen } from './src/screens/LockScreen';
 import { logEvent } from './src/lib/diagnostics';
 import {
@@ -34,12 +38,13 @@ import {
   saveSettings,
   saveUsername,
 } from './src/lib/settings';
-import { colors, radius, spacing } from './src/theme';
+import { useColors, type Palette, radius, spacing } from './src/theme';
 
 // Read from app.json rather than typed here: the copy in this file said 0.1.0 for
 // two releases, and the Lock screen's diagnostics report is the one place a stale
 // version is actually harmful.
 const VERSION: string = appConfig.expo.version;
+const INBOX_ROUTE = normalizePath(INBOX_PATH);
 const BLOCK_TOAST = 'Directly — that isn’t here';
 
 /** What a tab says when Instagram sends the tap back to the inbox instead. */
@@ -49,6 +54,10 @@ const TAB_FAILED: Partial<Record<TabId, string>> = {
 };
 
 function Shell() {
+  const colors = useColors();
+  const styles = makeStyles(colors);
+  const { width: windowWidth, fontScale } = useWindowDimensions();
+  const rail = Platform.OS === 'android' && windowWidth >= 840 && fontScale <= 1.4;
   const insets = useSafeAreaInsets();
   const web = useRef<IgWebViewHandle>(null);
 
@@ -59,6 +68,17 @@ function Shell() {
   const [username, setUsername] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
   const [lockOpen, setLockOpen] = useState(false);
+  const [storiesOpen, setStoriesOpen] = useState(false);
+  const [stories, setStories] = useState<StoryRing[]>([]);
+  const [storyUsers, setStoryUsers] = useState<string[]>([]);
+  const [storyUser, setStoryUser] = useState<string | null>(null);
+  const [navHeight, setNavHeight] = useState(100);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener('keyboardDidHide', () => setKeyboardOpen(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
   const [toast, setToast] = useState<string | null>(null);
   const [target, setTarget] = useState<{ path: string; nonce: number } | null>(null);
   const [, setLayout] = useState<Layout>('mobile');
@@ -133,7 +153,7 @@ function Shell() {
       setAlerts(false);
       alertsRef.current = false;
       setAlertsBlocked(true);
-      void saveAlerts(false);
+      void saveAlerts(false).then((saved) => { if (!saved) setToast('Alerts changed for this session, but couldn’t be saved.'); });
     });
   }, [signedIn]);
 
@@ -141,7 +161,7 @@ function Shell() {
     if (!next) {
       setAlerts(false);
       alertsRef.current = false;
-      void saveAlerts(false);
+      void saveAlerts(false).then((saved) => { if (!saved) setToast('Alerts changed for this session, but couldn’t be saved.'); });
       void clearAlerts();
       return;
     }
@@ -150,7 +170,7 @@ function Shell() {
       if (!granted) return;
       setAlerts(true);
       alertsRef.current = true;
-      void saveAlerts(true);
+      void saveAlerts(true).then((saved) => { if (!saved) setToast('Alerts changed for this session, but couldn’t be saved.'); });
       // The count the page already reported is still true; badge it now that
       // alerts are on, without waiting for the next message to arrive.
       void setUnreadBadge(unreadRef.current);
@@ -181,7 +201,7 @@ function Shell() {
     if (pending) {
       const settled = nextTab === pending.tab || Date.now() - pending.at > 5000;
       if (settled) pendingTab.current = null;
-      else if (nextPath === INBOX_PATH && TAB_FAILED[pending.tab]) {
+      else if (nextPath === INBOX_ROUTE && TAB_FAILED[pending.tab]) {
         pendingTab.current = null;
         logEvent('tab-failed', pending.tab);
         setToast(TAB_FAILED[pending.tab] ?? null);
@@ -192,9 +212,10 @@ function Shell() {
     setLayout(nextLayout);
     // The tab bar follows the URL the page reports, not the last thing tapped,
     // so a swipe back or an in-page link still moves the highlight.
-    if (nextTab) setTab(nextTab);
-    else if (lockOpen) setTab('lock');
-  }, [lockOpen]);
+    if (!storyUserForPath(nextPath)) setStoryUser(null);
+    if (!lockOpen && !storiesOpen && nextTab) setTab(nextTab);
+    else if (lockOpen) setTab('more');
+  }, [lockOpen, storiesOpen]);
 
   const onAccount = useCallback((name: string | null, isSignedIn: boolean) => {
     // The page can only name the account when your avatar link is rendered. On a
@@ -206,6 +227,7 @@ function Shell() {
       return next;
     });
     setSignedIn(isSignedIn);
+    if (!isSignedIn) { setStories([]); setStoryUser(null); setStoryUsers([]); }
   }, []);
 
   const onUnread = useCallback((count: number) => {
@@ -229,22 +251,37 @@ function Shell() {
     // an unchanged number on every route change would be nagging.
     if (count <= previous) return;
     // On the inbox list the new thread is already in front of you.
-    if (!lockRef.current && pathRef.current === INBOX_PATH) return;
+    if (!lockRef.current && pathRef.current === INBOX_ROUTE) return;
     void notifyUnread(count);
   }, []);
 
+  const saves = useRef(Promise.resolve());
   const updateSettings = useCallback((next: Settings) => {
     setSettings(next);
-    void saveSettings(next);
+    saves.current = saves.current.then(async () => {
+      if (!await saveSettings(next)) setToast('Settings applied for this session, but couldn’t be saved. Please try again.');
+    });
     web.current?.pushSettings(next);
   }, []);
+
+  const openStory = useCallback((user: string) => {
+    if (!settings.allowStories || !storyUserForPath(`/stories/${user}/`)) return;
+    setStoryUsers(stories.map((ring) => ring.username));
+    setStoryUser(user.toLowerCase());
+    setStoriesOpen(false); setLockOpen(false); setTab('stories');
+    setTarget({ path: `/stories/${user}/`, nonce: Date.now() });
+  }, [settings.allowStories, stories]);
 
   const selectTab = useCallback(
     (next: TabId) => {
       logEvent('tap', next);
-      if (next === 'lock') {
+      if (next === 'stories') {
+        setStoriesOpen(true); setLockOpen(false); setTab('stories'); return;
+      }
+      setStoriesOpen(false);
+      if (next === 'more') {
         setLockOpen(true);
-        setTab('lock');
+        setTab('more');
         return;
       }
       setLockOpen(false);
@@ -281,6 +318,7 @@ function Shell() {
     // built at all, and a dependency that will not compile is not worth having.
     setLockOpen(false);
     setTab('inbox');
+    setStories([]); setStoryUser(null); setStoryUsers([]); setUsername(null); void saveUsername(null);
     setUnread(0);
     unreadRef.current = 0;
     void setUnreadBadge(0);
@@ -296,23 +334,23 @@ function Shell() {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (lockOpen) {
-        setLockOpen(false);
+      if (lockOpen || storiesOpen) {
+        setLockOpen(false); setStoriesOpen(false); setTab(tabForPath(path) ?? 'inbox');
         return true;
       }
-      if (path === INBOX_PATH) return false;
+      if (path === INBOX_ROUTE) return false;
       web.current?.goBack();
       return true;
     });
     return () => subscription.remove();
-  }, [lockOpen, path]);
+  }, [lockOpen, storiesOpen, path]);
 
   if (!settingsReady) {
     // Same surface as a page load: the app should never show a second, different
     // "starting up" screen before the first one.
     return (
       <View style={styles.boot}>
-        <StatusBar style="light" />
+        <StatusBar style={colors.bg === '#f5f5fa' ? 'dark' : 'light'} />
         <LoadingSurface visible />
       </View>
     );
@@ -320,10 +358,11 @@ function Shell() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <StatusBar style="light" />
-      <View style={styles.body}>
-        <View style={[styles.webLayer, lockOpen && styles.hidden]}>
-                      <IgWebView
+      <StatusBar style={colors.bg === '#f5f5fa' ? 'dark' : 'light'} />
+      <View style={[styles.body, rail && { marginLeft: 88 }]}>
+        <View pointerEvents={lockOpen || storiesOpen ? 'none' : 'auto'} accessibilityElementsHidden={lockOpen || storiesOpen} importantForAccessibility={lockOpen || storiesOpen ? 'no-hide-descendants' : 'auto'}
+          style={[styles.webLayer, (lockOpen || storiesOpen) && styles.hidden, ((path.startsWith('/direct/') && path !== '/direct/inbox') || storyUserForPath(path)) && !keyboardOpen && !rail && { marginBottom: navHeight }]}>
+          <IgWebView
             ref={web}
             settings={settings}
             onNotice={onNotice}
@@ -331,11 +370,18 @@ function Shell() {
             onBlocked={onBlocked}
             onAccount={onAccount}
             onUnread={onUnread}
+            onStories={setStories}
+            onStoryRequest={openStory}
+            storyUser={storyUser}
+            storyUsers={storyUsers}
+            bottomInset={navHeight}
             onLoadingChange={() => undefined}
             navigateTarget={target}
           />
         </View>
 
+        {storiesOpen && <View style={styles.lockLayer}><StoriesScreen stories={stories} enabled={settings.allowStories} autoAdvance={settings.storiesAutoAdvance}
+          onOpen={openStory} onSettings={() => { setStoriesOpen(false); setLockOpen(true); setTab('more'); }} /></View>}
         {lockOpen ? (
           <View style={styles.lockLayer}>
             <LockScreen
@@ -363,13 +409,13 @@ function Shell() {
         ) : null}
 
         {toast ? (
-          <View style={styles.toast} pointerEvents="none">
+          <View style={[styles.toast, { bottom: rail ? spacing.lg : navHeight + spacing.sm }]} pointerEvents="none">
             <Text style={styles.toastText}>{toast}</Text>
           </View>
         ) : null}
       </View>
 
-      <TabBar active={tab} onSelect={selectTab} bottomInset={insets.bottom} unread={unread} />
+      {!keyboardOpen && <TabBar active={tab} onSelect={selectTab} bottomInset={insets.bottom} onHeight={setNavHeight} unread={unread} />}
     </View>
   );
 }
@@ -382,7 +428,7 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: Palette) => StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.bg },
   body: { flex: 1 },
   webLayer: { flex: 1 },
@@ -401,8 +447,7 @@ const styles = StyleSheet.create({
     left: spacing.lg,
     right: spacing.lg,
     bottom: spacing.lg,
-    // Glass: translucent fill, a bright specular rim and a soft cast shadow.
-    backgroundColor: 'rgba(35,35,41,0.82)',
+    backgroundColor: colors.surfaceRaised,
     borderColor: 'rgba(255,255,255,0.16)',
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: radius.pill,
