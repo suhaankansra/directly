@@ -1,6 +1,6 @@
 /**
- * The site is static by design: three HTML files, one stylesheet, one small
- * script, two icons. There is nothing to compile, so "build" is a copy into
+ * The site is static by design: HTML files, one stylesheet, one small
+ * script and original icons. There is nothing to compile, so "build" is a copy into
  * `dist/`, which is what gets uploaded to any static host.
  */
 

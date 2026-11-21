@@ -21,6 +21,7 @@
   var platform = navigator.platform || '';
   var isIPad = platform === 'MacIntel' && navigator.maxTouchPoints > 1;
   var isIOS = /iPhone|iPad|iPod/.test(ua) || isIPad;
+  var isAndroid = /Android/.test(ua);
   var isFirefox = /Firefox\//.test(ua);
   var isEdgeOrOpera = /Edg\/|OPR\//.test(ua);
   var isChromium = (/Chrome\/|Chromium\//.test(ua) && !/Firefox\//.test(ua)) || isEdgeOrOpera;
@@ -33,6 +34,9 @@
   if (isIOS) {
     targetId = 'card-ios';
     label = 'an iPhone or iPad';
+  } else if (isAndroid) {
+    targetId = 'card-android';
+    label = 'Android';
   } else if (isFirefox) {
     targetId = 'card-firefox';
     label = 'Firefox';
@@ -56,17 +60,5 @@
         card.scrollIntoView({ block: 'nearest' });
       }
     }
-  }
-
-  // Pending store buttons look like buttons but must not pretend to work.
-  var pending = document.querySelectorAll('[aria-disabled="true"]');
-  for (var i = 0; i < pending.length; i += 1) {
-    pending[i].addEventListener('click', function (event) {
-      event.preventDefault();
-      var noteEl = document.getElementById('detect-note');
-      if (noteEl) {
-        noteEl.textContent = 'Not published yet — the help page has the manual install steps in the meantime.';
-      }
-    });
   }
 })();

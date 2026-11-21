@@ -42,7 +42,7 @@
             <h1>Instagram, with the scrolling removed.</h1>
             <p class="lede">
               Directly opens Instagram straight into your messages and takes away the feed, Reels and
-              Explore. You can still check notifications, look someone up, and watch the one reel a
+              Explore. You can still check activity, open a known profile, and watch the one reel a
               friend sent you — but swipe up and nothing else happens.
             </p>
             <div class="hero-actions">
@@ -50,7 +50,7 @@
               <a class="button button-ghost" href="#how">See what changes</a>
             </div>
             <p class="small muted" style="margin-top: 18px">
-              Not affiliated with Instagram or Meta. Nothing is uploaded: there is no account and no server.
+              Independent from Instagram and Meta. Directly has no account system or service backend.
             </p>
           </div>
 
@@ -85,8 +85,8 @@
               <ul class="checks">
                 <li>Your DM inbox, threads, notes and message requests</li>
                 <li>Sending text, photos, voice notes, stickers and reactions</li>
-                <li>Notifications, with Follow Back</li>
-                <li>Profiles you look up on purpose</li>
+                <li>Activity and supported Follow Back actions</li>
+                <li>Your own profile and supported profile links</li>
                 <li>One reel or post a friend sent, opened on its own</li>
               </ul>
             </div>
@@ -138,36 +138,43 @@
         <div class="wrap">
           <div class="section-head">
             <h2>Get it</h2>
-            <p id="detect-note">Pick your device. Nothing is installed until you choose it.</p>
+            <p id="detect-note">Pick your device. These downloads predate the current five-tab source update.</p>
           </div>
           <div class="install">
             <article class="install-card" id="card-ios">
               <span class="badge">Best for this device</span>
               <h3>iPhone</h3>
-              <p>The app, plus a Safari extension so instagram.com behaves in Safari too.</p>
-              <a class="button button-primary" href="help.html#ios" aria-disabled="true">Not published yet</a>
-              <span class="status">App Store review in progress.</span>
+              <p>Native app build available to sideload. The iOS download is unsigned and needs your Apple development signing.</p>
+              <a class="button button-primary" href="https://github.com/suhaankansra/directly/releases/download/latest/directly-main-unsigned.ipa">Download iOS build</a>
+              <span class="status">See the install guide for signing. The current download predates the newer five-tab source.</span>
+            </article>
+            <article class="install-card" id="card-android">
+              <span class="badge">Best for this device</span>
+              <h3>Android</h3>
+              <p>Native app build available as an APK for sideloading.</p>
+              <a class="button button-primary" href="https://github.com/suhaankansra/directly/releases/download/latest/directly-main.apk">Download Android APK</a>
+              <span class="status">The current download predates the newer five-tab source.</span>
             </article>
             <article class="install-card" id="card-chrome">
               <span class="badge">Best for this browser</span>
               <h3>Chrome, Edge, Brave, Arc</h3>
               <p>One extension for every Chromium browser, on Windows, macOS and Linux.</p>
-              <a class="button button-primary" href="help.html#chrome" aria-disabled="true">Install unpacked for now</a>
-              <span class="status">Store listing not published yet — the help page has the two-minute sideload steps.</span>
+              <a class="button button-primary" href="help.html#chrome">Install unpacked</a>
+              <span class="status">Build the extension from source using the install guide.</span>
             </article>
             <article class="install-card" id="card-firefox">
               <span class="badge">Best for this browser</span>
               <h3>Firefox</h3>
               <p>The same extension, built for Firefox on desktop.</p>
-              <a class="button button-primary" href="help.html#firefox" aria-disabled="true">Install temporarily</a>
-              <span class="status">Add-ons listing not published yet.</span>
+              <a class="button button-primary" href="help.html#firefox">Install temporarily</a>
+              <span class="status">Firefox removes temporary add-ons when it quits.</span>
             </article>
             <article class="install-card" id="card-safari">
               <span class="badge">Best for this browser</span>
               <h3>Safari on Mac</h3>
-              <p>Ships inside the iPhone app's Safari extension; macOS build follows the app.</p>
-              <a class="button button-primary" href="help.html#safari" aria-disabled="true">Not published yet</a>
-              <span class="status">Needs the signed app build.</span>
+              <p>Convert the desktop extension with Apple's Safari Web Extension tool.</p>
+              <a class="button button-primary" href="help.html#safari">Build for Safari</a>
+              <span class="status">Requires macOS and Xcode.</span>
             </article>
           </div>
         </div>
@@ -179,9 +186,10 @@
           <details>
             <summary>Does this read my messages?</summary>
             <p>
-              No. It changes what Instagram shows you — hiding elements, moving you back to your
-              inbox — and it has no network code of its own. There is no account, no analytics and no
-              server to send anything to.
+              Directly does not read message text, passwords or cookies. It reads the signed-in
+              username from a profile link and uses page elements to apply route rules and show
+              controls. Settings and the remembered username stay on your device; there is no
+              Directly service backend or analytics.
             </p>
           </details>
           <details>

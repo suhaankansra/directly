@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Directly — help &amp; install</title>
-    <meta name="description" content="How to install Directly on iPhone, in Chrome, in Firefox, and in Safari." />
+    <meta name="description" content="Install Directly on iPhone and Android, or build the browser extension for desktop." />
     <meta name="theme-color" content="#0a0a0d" />
     <link rel="icon" href="assets/icon-192.png" />
     <link rel="stylesheet" href="styles.css" />
@@ -28,8 +28,9 @@
         <div class="wrap">
           <h1 style="font-size: clamp(1.8rem, 4.5vw, 2.6rem)">Help &amp; install</h1>
           <p class="lede">
-            Nothing is on a store yet. Until then every surface can be installed by hand in a couple of
-            minutes, and each section below is the exact sequence.
+            Native APK and iOS builds are available from the rolling GitHub release. The iOS build is
+            unsigned and needs signing with your Apple development team. Browser extensions can be
+            built from source. These downloads predate the current five-tab source update.
           </p>
         </div>
       </section>
@@ -39,15 +40,15 @@
           <h2>Chrome, Edge, Brave, Arc</h2>
           <p>Loads as an unpacked extension. It survives restarts; Chrome may ask once to confirm.</p>
           <ol>
-            <li>Download or clone this project and run <code>pnpm install</code>, then <code>pnpm build</code>.</li>
+            <li>Download or clone this project, install pnpm, then run <code>pnpm install</code> and <code>pnpm build</code>.</li>
             <li>Open <code>chrome://extensions</code> (or <code>edge://extensions</code>, <code>brave://extensions</code>).</li>
             <li>Turn on <strong>Developer mode</strong>.</li>
             <li>Choose <strong>Load unpacked</strong> and pick <code>apps/extension/dist/chrome</code>.</li>
-            <li>Open instagram.com — you should land in your DMs with a four-item bar.</li>
+            <li>Open instagram.com. The extension routes supported pages to your inbox.</li>
           </ol>
           <p class="small muted">
-            Permissions requested: <code>instagram.com</code> only, plus storage, tabs and webNavigation
-            so a blocked page can be redirected before it renders. No other site is touched.
+            The extension uses storage for settings and session data, and webNavigation to redirect
+            blocked routes. It runs on Instagram pages only.
           </p>
         </div>
       </section>
@@ -68,15 +69,25 @@
         <div class="wrap">
           <h2>iPhone</h2>
           <ol>
-            <li>The app is in App Store review. Once it ships, installing it also installs the Safari extension.</li>
-            <li>In <strong>Settings → Safari → Extensions</strong>, turn on <strong>Directly</strong>, then allow it for instagram.com.</li>
-            <li>Open Safari, go to instagram.com and sign in. You land in your DMs.</li>
+            <li>Download the unsigned IPA from the <a href="https://github.com/suhaankansra/directly/releases/tag/latest">rolling release</a>.</li>
+            <li>Sign it with your own Apple development team using Xcode or the project signing instructions.</li>
+            <li>Install the signed app on your device and open Directly. The current release build is older than the five-tab source update.</li>
           </ol>
           <p class="small muted">
-            Building it yourself: <code>cd apps/ios &amp;&amp; npm install &amp;&amp; npx expo run:ios</code>. A
-            development build is required — signing out and the Safari extension need native code that
-            Expo Go cannot provide.
+            For a development build, follow the repository's <a href="https://github.com/suhaankansra/directly/blob/main/docs/11-ship-prep.md">ship preparation guide</a>. Expo Go does not include the native modules this app uses.
           </p>
+        </div>
+      </section>
+
+      <section id="android">
+        <div class="wrap">
+          <h2>Android</h2>
+          <ol>
+            <li>Download <a href="https://github.com/suhaankansra/directly/releases/download/latest/directly-main.apk">directly-main.apk</a> from the rolling release.</li>
+            <li>Open the APK on your device and allow installation for the app you use to open it, if Android asks.</li>
+            <li>Launch Directly and sign in to Instagram in its web view.</li>
+          </ol>
+          <p class="small muted">The APK is a prior release. The current source includes five-tab navigation and Focus controls not present in that download.</p>
         </div>
       </section>
 
@@ -114,15 +125,14 @@
           <details>
             <summary>I want to be signed out completely</summary>
             <p>
-              In the app: <strong>Lock → Sign out</strong>. In a browser: sign out of Instagram itself,
-              or remove the extension's site data. Directly never stores your session.
+              In the current source build: <strong>More → Sign out</strong>. In the older downloadable
+              build, use <strong>Lock → Sign out</strong>. In a browser, sign out of Instagram itself.
             </p>
           </details>
           <details>
             <summary>Does it work in Chrome on Android?</summary>
             <p>
-              No. Chrome for Android does not support extensions. Safari on iOS and Firefox on Android
-              do; Android browsers are on the roadmap, not in this build.
+              Directly has a native Android app. The desktop browser extension is not for Android mobile browsers.
             </p>
           </details>
         </div>

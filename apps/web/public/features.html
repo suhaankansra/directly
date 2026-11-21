@@ -6,14 +6,14 @@
     <title>Directly — what it does, exactly</title>
     <meta
       name="description"
-      content="The four tabs, the one-reel rule, what gets blocked and what you can change. The whole product, in one page."
+      content="The five tabs, Focus controls, the one-reel rule, and what Directly blocks."
     />
     <meta name="theme-color" content="#0a0a0d" />
     <link rel="icon" href="assets/icon-192.png" />
     <link rel="apple-touch-icon" href="assets/icon-192.png" />
     <link rel="stylesheet" href="styles.css" />
     <meta property="og:title" content="Directly — what it does, exactly" />
-    <meta property="og:description" content="Four tabs, one reel, no feed. The whole product in one page." />
+    <meta property="og:description" content="Five tabs, Focus controls, one reel from a DM, and no feed." />
     <meta property="og:type" content="website" />
   </head>
   <body>
@@ -35,7 +35,7 @@
       <section class="page-head">
         <div class="wrap">
           <span class="eyebrow">The whole product</span>
-          <h1>Four tabs. One reel. No feed.</h1>
+          <h1>Five tabs. Focus controls. No feed.</h1>
           <p class="lede">
             Most apps hide their limits in a settings screen. This page is the opposite: here is
             everything Directly does, everything it refuses to do, and the handful of switches you
@@ -47,41 +47,42 @@
       <section id="tabs">
         <div class="wrap">
           <div class="section-head">
-            <h2>The four tabs</h2>
-            <p>Instagram's own pages, re-navigated. Nothing is rebuilt, so nothing looks foreign.</p>
+            <h2>The five tabs</h2>
+            <p>Native navigation opens Instagram pages inside the app's single web view.</p>
           </div>
           <div class="features">
             <article class="feature">
               <span class="tag">Tab one</span>
-              <h3>DMs</h3>
+              <h3>Chats</h3>
               <p>
-                Your inbox, threads, message requests and notes. Sending text, photos, voice notes,
-                stickers and reactions all work, because it is Instagram's own composer.
+                Your Instagram inbox, threads, message requests and notes, using Instagram's own pages and composer.
               </p>
             </article>
             <article class="feature">
               <span class="tag">Tab two</span>
-              <h3>Activity</h3>
+              <h3>Stories</h3>
               <p>
-                Likes, comments, follows and requests for you. Follow Back works; tapping through to the
-                post it refers to does not jump you into a feed.
+                Off by default. When enabled, choose a person from the available story tray. Continuing to another person is separately controlled and limited to that list.
               </p>
             </article>
             <article class="feature">
               <span class="tag">Tab three</span>
-              <h3>Profile</h3>
+              <h3>Activity</h3>
               <p>
-                Anyone you look up on purpose. Searching by name means typing a name you already know —
-                not being handed a grid to browse.
+                Open Instagram's activity page for likes, comments, follows and requests.
               </p>
             </article>
             <article class="feature">
               <span class="tag">Tab four</span>
-              <h3>Lock</h3>
+              <h3>Profile</h3>
               <p>
-                A native screen, not an Instagram page: the switches on this page, your signed-in
-                account, and sign out. It exists so the other three can stay small.
+                Open the signed-in account's profile. Directly does not provide global people search or suggested profile grids.
               </p>
+            </article>
+            <article class="feature">
+              <span class="tag">Tab five</span>
+              <h3>More</h3>
+              <p>Account details, sign out, alerts, and Focus controls for the available feed and story settings.</p>
             </article>
           </div>
         </div>
@@ -138,11 +139,11 @@
             </article>
             <article class="feature">
               <h3>Reels and audio pages</h3>
-              <p>A reel plays once, on its own, from a DM. The tab that serves you an endless sequence does not open.</p>
+              <p>A reel opened from a DM is pinned and loops in place. The Reels tab and audio pages stay blocked.</p>
             </article>
             <article class="feature">
               <h3>Explore and search results</h3>
-              <p>Searching for a person is allowed. Browsing what Instagram suggests you look at is not.</p>
+              <p>Explore, global search results and suggested grids stay blocked. Known profile links and your own profile remain available.</p>
             </article>
             <article class="feature">
               <h3>Stories</h3>
@@ -164,7 +165,7 @@
         <div class="wrap">
           <div class="section-head">
             <h2>The switches you do get</h2>
-            <p>Small, specific, and all off-by-default toward the stricter setting where it matters.</p>
+            <p>Settings are stored on the device. Defaults keep the stricter limits in place.</p>
           </div>
           <div class="steps">
             <div class="step">
@@ -179,8 +180,8 @@
             </div>
             <div class="step">
               <span class="step-num">3</span>
-              <h3>Labels and the block note</h3>
-              <p>Icon-only navigation if you want the bar quieter, and the short "not here" note can go too.</p>
+              <h3>Story continuation</h3>
+              <p>Off by default. When stories are enabled, you can choose whether to continue to another person in the available story list.</p>
             </div>
           </div>
         </div>
@@ -190,9 +191,9 @@
         <div class="wrap">
           <div class="cta">
             <div>
-              <h2>No account. No server. No copy of anything.</h2>
+              <h2>No Directly account or service backend.</h2>
               <p>
-                Directly never sees your password and keeps no session of its own — sign-in happens
+                Directly never reads your password or cookies and keeps no session of its own — sign-in happens
                 inside Instagram's page, and the cookies stay in your browser or your phone's web view.
                 There is nothing to sign up for because there is nothing to sign up to.
               </p>
@@ -209,11 +210,8 @@
             <p>Worth knowing before you install it, rather than after.</p>
           </div>
           <details>
-            <summary>It cannot run inside a phone browser on Android</summary>
-            <p>
-              Chrome for Android does not support extensions, and a website cannot modify Instagram's
-              pages from the outside. The iOS app and the desktop extension are the two honest shapes.
-            </p>
+            <summary>It cannot run inside a phone browser</summary>
+            <p>The Android and iOS native apps use an embedded web view. The browser extension is for desktop browsers; it does not modify pages from an ordinary mobile browser.</p>
           </details>
           <details>
             <summary>It cannot promise Instagram never changes the page</summary>

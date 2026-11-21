@@ -34,8 +34,9 @@
           <span class="eyebrow">Changelog</span>
           <h1>What changed, and when.</h1>
           <p class="lede">
-            Newest first. Nothing here is on a store yet, so every entry describes something you can
-            build and run yourself today — and each one says what has actually been tested.
+            Newest first. Downloadable iOS and Android builds are available from the
+            <a href="https://github.com/suhaankansra/directly/releases/tag/latest">rolling release</a>;
+            those binaries may predate newer source updates.
           </p>
         </div>
       </section>
@@ -43,6 +44,27 @@
       <section>
         <div class="wrap">
           <div class="changelog">
+            <article class="release">
+              <div class="release-head">
+                <h2>Source update — five-tab navigation and Focus controls</h2>
+                <span class="release-date">21 November 2026</span>
+              </div>
+              <ul>
+                <li>Added Chats, Stories, Activity, Profile and More navigation across the native app and extension.</li>
+                <li>Added native Focus controls and separate options for allowing stories and continuing through the available story list.</li>
+                <li>Updated the website to describe the current source and distinguish it from the older downloadable builds.</li>
+              </ul>
+              <p class="small muted">Source update only. The latest APK and unsigned IPA were built before this change. Signed-in device behavior still needs real-device verification.</p>
+            </article>
+
+            <article class="release">
+              <div class="release-head">
+                <h2>Latest downloadable build</h2>
+                <span class="release-date">Rolling release</span>
+              </div>
+              <p><a href="https://github.com/suhaankansra/directly/releases/tag/latest">Download the current APK or unsigned IPA</a>. The iOS IPA must be signed with your own Apple development team before installation.</p>
+            </article>
+
             <article class="release">
               <div class="release-head">
                 <h2>0.1.0 — renamed to Directly</h2>
@@ -66,9 +88,9 @@
                 <span class="release-date">1 November 2026</span>
               </div>
               <ul>
-                <li>Shared core for routing, the one-reel lock, page cleanup and the four-item navigation, with unit tests.</li>
+                <li>Shared core for routing, the one-reel lock, page cleanup and the initial navigation, with unit tests.</li>
                 <li>Manifest V3 extension for Chrome, Edge, Brave and Arc, plus a Firefox build.</li>
-                <li>Expo app for iPhone with a native four-tab bar and a Lock screen for the switches.</li>
+                <li>Expo app for iPhone with native navigation and a settings screen for the switches.</li>
                 <li>An offline fixture that mimics Instagram's mobile layout, so blocking can be demonstrated without an account.</li>
                 <li>Blocking verified in a real browser against that fixture: feed, Explore and a stray reel redirect; a reel from a DM pins and loops.</li>
               </ul>
