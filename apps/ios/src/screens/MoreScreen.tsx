@@ -30,7 +30,7 @@ type Props = {
   version: string;
 };
 
-export function LockScreen({
+export function MoreScreen({
   settings,
   username,
   signedIn,

@@ -3,6 +3,11 @@
 **Phase:** 2 of 11 · **Status:** complete (design decisions made, one risk explicitly unresolved) · **Date:** 2026-11-01
 **Depends on:** [01-teardown.md](01-teardown.md) · **Verified facts:** marked ✅ with source; everything else is marked ⚠️ and belongs to Phase 3.
 
+> **Historical design snapshot (2026-11-01).** The initial padlock/four-destination proposal,
+> permission plan and phase references below are preserved as design history. The current five
+> destinations and More/Focus behavior are recorded in [DECISIONS.md](DECISIONS.md) D032–D036 and
+> [38-v2-spec.md](38-v2-spec.md); use those and the current source when implementing changes.
+
 ---
 
 ## 0. What this document decides

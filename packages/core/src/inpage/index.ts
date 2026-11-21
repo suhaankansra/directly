@@ -294,7 +294,7 @@ export function boot(options: BootOptions = {}): Booted {
 
   /**
    * The signed-in username, read from a profile link that Instagram already
-   * renders. Used only to show "signed in as …" in the Lock tab — never stored,
+   * renders. Used only to show "signed in as …" in More — never stored,
    * never sent anywhere else, never used for a request.
    */
   function detectAccount(): string | null {
@@ -331,7 +331,7 @@ export function boot(options: BootOptions = {}): Booted {
     // Reported separately from the name: the name is often unknowable (it needs
     // a profile link on the current page), but whether a session exists is not.
     // Without this the host cannot tell "signed in, name unknown" from "logged
-    // out", and the Lock tab claimed a session it did not have.
+    // out", and More claimed a session it did not have.
     const signedIn = isLoggedIn();
     if (username === lastAccount && signedIn === lastSignedIn) return;
     lastAccount = username;

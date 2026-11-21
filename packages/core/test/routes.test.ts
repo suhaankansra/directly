@@ -242,7 +242,7 @@ describe('unknown routes fail closed when logged in, open when logged out', () =
 });
 
 describe('tabForPath', () => {
-  it('maps routes to our four tabs', () => {
+  it('maps Instagram routes to their matching tabs', () => {
     expect(tabForPath('/direct/inbox/')).toBe('inbox');
     expect(tabForPath('/direct/t/1/')).toBe('inbox');
     expect(tabForPath('/accounts/activity/')).toBe('activity');

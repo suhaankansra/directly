@@ -5,7 +5,7 @@
  * opening Safari") is otherwise invisible: all the evidence is a memory of what
  * the screen did. This records the few facts the app already knows — which route
  * the page reported, which verdict a navigation got, and the host and path it was
- * given for — so the Lock screen can show them and a copy can leave the phone.
+ * given for — so More can show them and a copy can leave the phone.
  *
  * Nothing else is stored. A query string is dropped before anything is kept (the
  * link shim puts an outbound address there), and the page protocol has no field

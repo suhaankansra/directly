@@ -34,7 +34,7 @@ Tests: `test/{routes,host,guard,stories}.test.ts` and `tools/test-phase1-extensi
 Extension: `src/{content,background}.ts`, `src/popup/{index.html,popup.ts}`.
 Native: `App.tsx`, `app.json`, manifest/lockfile, theme, settings storage,
 `components/{TabBar,Glass,IgWebView,LoadingSurface}.tsx`,
-`screens/{LockScreen,FocusControls,StoriesScreen}.tsx`, and regenerated injection.
+`screens/{MoreScreen,FocusControls,StoriesScreen}.tsx`, and regenerated injection.
 Documentation: this report, README and DECISIONS.
 
 Private migration and source materials are outside the public release scope. They are not inputs to the application build.

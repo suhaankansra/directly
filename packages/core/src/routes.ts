@@ -336,7 +336,7 @@ export function isProfilePath(rawUrl: string): boolean {
   return !RESERVED.has(seg[0]!);
 }
 
-/** Which of our four tabs owns the current URL (null = none of them). */
+/** Which tab owns the current Instagram URL (null for native-only or blocked routes). */
 export function tabForPath(rawUrl: string): TabId | null {
   const path = normalizePath(rawUrl);
   const seg = segments(path);

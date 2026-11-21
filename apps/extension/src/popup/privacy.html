@@ -32,15 +32,18 @@
       <h2>What it never does</h2>
       <ul>
         <li>It never reads or stores your password, your cookies or your session.</li>
-        <li>It never sends your messages, DMs, profile or browsing anywhere.</li>
+        <li>It does not send message content or browsing history to a Directly service or third party. Directly has no service backend.</li>
         <li>It has no server, no analytics, no accounts and no tracking pixels.</li>
         <li>It does not automate anything on Instagram: no auto-likes, follows or messages.</li>
       </ul>
 
       <h2>What it stores</h2>
       <p>
-        Six on/off switches, kept in your browser's own extension storage on this device. That is
-        the entire database. Clearing the extension's data erases it.
+        Settings are kept in your browser's local extension storage. When you choose a story, the
+        selected handle and the available story-list handles are held in session storage for that
+        tab so route checks can restrict continuation. That context clears when the tab closes or
+        the browser session ends; it is not a message archive. Clearing extension data erases local
+        settings.
       </p>
 
       <h2>What it changes</h2>

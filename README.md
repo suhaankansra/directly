@@ -5,15 +5,16 @@ Explore — you can still watch the one reel a friend sent you, and then you sto
 
 Two surfaces, one shared core:
 
-- **iOS app** (`apps/ios`) — an Expo/React Native shell around Instagram's own mobile web in a single
-  WKWebView, with a native five-tab bar.
+- **Native app** (`apps/ios`) — an Expo/React Native shell for iOS and Android. Each platform shows
+  Instagram's own mobile web in one embedded WebView, with native five-destination navigation.
 - **Browser extension** (`apps/extension`) — MV3, runs on `instagram.com` only, same blocking logic,
   plus a five-item nav that replaces Instagram's.
 - **Website** (`apps/web`) — static landing, help and privacy pages. It never shows Instagram; it
   points you at the app or the extension.
 
-Nothing here reads, stores or transmits your password, cookies or messages, and nothing automates
-anything on Instagram. There is no server.
+Nothing here reads, stores or transmits your password, cookies or message contents, and nothing
+automates anything on Instagram. The native apps store settings and a signed-in username locally;
+the extension stores settings locally. There is no service backend.
 
 ## Requirements
 
@@ -140,13 +141,13 @@ video looped. Blocking fails closed; cosmetic hiding fails open.
 | File | What it holds |
 |---|---|
 | [01-teardown.md](docs/01-teardown.md) | Directly identity, destinations, route protections, privacy and acceptance requirements |
-| [02-architecture.md](docs/02-architecture.md) | why this shape and not seven others, route model, guard, injection plan, reel lock, risks |
+| [02-architecture.md](docs/02-architecture.md) | original architecture snapshot; current destinations and decisions are linked from the document |
 | [03-findings.md](docs/03-findings.md) | verified headers and routes, what the fixture proved, the things only you can check |
 | [04-plan.md](docs/04-plan.md) | the build order actually used, and where it deviates from the original plan |
 | [09-test-plan.md](docs/09-test-plan.md) | allowed/blocked acceptance tables with honest pass/device status |
 | [10-review.md](docs/10-review.md) | security and performance review, remote-config design, risk register |
 | [11-ship-prep.md](docs/11-ship-prep.md) | store copy, privacy answers, EAS/TestFlight, Safari conversion, listings, deploy |
-| [DECISIONS.md](docs/DECISIONS.md) | every decision, with its reason and date (D001–D026) |
+| [DECISIONS.md](docs/DECISIONS.md) | append-only decision log, with reasons and dates (D001–D036) |
 
 ## Status, honestly
 

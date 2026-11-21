@@ -3,6 +3,9 @@
 The plan was written as ordered, individually testable tasks. Each line is done in this repo; the
 "checked by" column is how it was verified, not how it was hoped to work.
 
+> This is the original build-order record, not the current screen map. The five-destination
+> implementation and its device-acceptance status are in [38-v2-spec.md](38-v2-spec.md).
+
 ## Order of work
 
 | # | Task | Checked by |
@@ -38,7 +41,7 @@ packages/core/
   src/inpage/standalone.ts self-booting entry used by the WebView
   test/                    150 tests + fixture server
 apps/extension/            MV3: content, background, popup/options, two manifests
-apps/ios/                  Expo app: App.tsx, IgWebView, TabBar, LockScreen, bridge
+apps/ios/                  Expo app: App.tsx, IgWebView, TabBar, MoreScreen, bridge
 apps/web/                  static landing/help/privacy + tiny local server
 tools/make-icons.mjs        dependency-free PNG icon generator
 docs/                       this plan, findings, decisions, test plan, review, ship prep

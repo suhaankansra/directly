@@ -1,5 +1,8 @@
 # 10 — Review, hardening, risks
 
+Current implementation review updated 2026-11-21. This file reflects the current five-destination
+app and extension; older entries in the dated plan and release records remain historical.
+
 Written after the build, reading the code back. Findings are listed with what was changed and what was
 knowingly left.
 
@@ -7,16 +10,16 @@ knowingly left.
 
 | Area | Finding | Action |
 |---|---|---|
-| Credentials | Nothing in `packages/core` reads `document.cookie`, form fields, or storage. The only `document.cookie` use is `guessLoggedIn()` in `inpage/index.ts`, and it tests for the **presence** of `ds_user_id` without reading its value. | Keep. Consider dropping if it ever feels like a slippery slope; it only affects the unknown-route fallback. |
+| Credentials | Current code does not read `document.cookie`, password fields, or credentials. It reads a signed-in username from a profile link, story-tray usernames for the Stories feature, and the unread count when Instagram exposes one. | Keep the selectors limited to those routing and control needs. Do not read message contents or cookies. |
 | Session storage | iOS relies on WKWebView's own cookie store (`sharedCookiesEnabled`); the extension relies on the browser's. No copy exists in app storage. | Keep. |
-| Message content | The bridge protocol has no field that can carry a message. `di:url` carries a path, `di:account` a username, `di:blocked` a reason code, `di:unread` a count and nothing else (D031). | Keep. A future feature that needs more must add a validated type, which is a visible diff. |
+| Message content | The bridge has no field for message text. It carries paths, a signed-in username, story-tray usernames, route reasons and an unread count. | Keep the message-content boundary; additions require a validated protocol type and explicit review. |
 | Bridge trust | `parsePageMessage` / `parseHostMessage` enforce `v === 1`, a known type, path must start with `/`, no backslashes, ≤ 512 chars, payload ≤ 4 kB, pins/usernames regex-limited. | Tested. Unknown input is dropped, never forwarded, never evaluated. |
 | Origin checks | Extension content script ignores `message` events unless `event.source === window` **and** `event.origin === location.origin`. iOS trusts only the WebView's own channel plus the same validation. | Keep. A cross-origin frame cannot drive the page's settings. |
 | Remote config | Fetched as JSON only, `credentials: 'omit'`, 4 s timeout, ≤ 64 kB, merged through a whitelist: known keys, `string[]` values, ≤ 400 chars, no `{` and no newlines. No `eval`, no `new Function`, no dynamic import. | This is the policy-safe shape (data, not code). Tested indirectly; the merge rejects unknown keys. |
 | Injected HTML | `navBar.ts` sets `innerHTML` from a **constant** icon map keyed by a union type. No user or page data reaches it. | Keep. If icons ever become configurable, use `createElementNS` instead. |
-| Logging | `debug` logs go to the local console only: blocked reason, path, version. No payloads, no usernames, no message text. | Keep. |
-| Extension permissions | `storage`, `webNavigation`, `tabs`, host `instagram.com`, `instagram.com` (apex). No `<all_urls>`, no scripting-on-demand, no webRequest, no cookies API. | `tabs` is only used to send a blocked tab to the inbox. Could be narrowed to `tabs.update` without `tabs` permission (same-origin URL update needs no extra permission) — worth verifying before store submission. |
-| iOS deps | `@react-native-cookies/cookies` is used only by "Sign out". If it fails to load, the app falls back to Instagram's own logout page. | Keep, documented. |
+| Logging | iOS diagnostics are bounded and held in memory. They include paths, route decisions, and the signed-in handle in an account event; they do not log message text. Extension debug output is local to the browser console. | Keep diagnostics local, bounded, and content-free. |
+| Extension permissions | `storage` and `webNavigation`, plus Instagram-only host permissions for the apex and `www` hosts. No `<all_urls>`, cookies API, `webRequest`, or `tabs` permission. | Matches `apps/extension/scripts/build.mjs`; `tabs.update` and `tabs.onRemoved` are used without requesting the tabs permission. |
+| Native session | Instagram's own WebView cookie store holds the login. Directly does not read cookies; sign out uses Instagram's logout route and clears local account metadata. | Keep session handling inside the platform WebView. |
 
 ## 2. Performance
 
@@ -56,16 +59,16 @@ GET https://<your-host>/directly/selectors.mobile.json
 
 | # | Risk | Honest assessment | Mitigation / decision needed |
 |---|---|---|---|
-| R1 | **Instagram blocks logins inside WKWebView.** | Unresolved. I could not find current, credible evidence either way. If it does, the whole iOS surface collapses to "Safari + extension", which is lawful but much weaker. | Test first: install the dev build, log in. If blocked, pivot the app to a guide-and-check shell (see D021). This is the single biggest unknown in the project. |
+| R1 | **Signed-in Instagram flows on real devices.** | Still unverified with an authenticated account: login/challenge, inbox, opening a thread, sending, and returning. | Complete the device checklist in `09-test-plan.md` on iOS and Android before claiming the native flow is verified. |
 | R2 | **Meta's terms.** | Wrapping their site and modifying its UI is not something their terms contemplate. Ad-blockers are a long-standing precedent, but precedent is not permission. | You should read Meta's Platform Terms and the Instagram Terms of Use yourself. This document is not legal advice, and no amount of engineering makes a policy question go away. |
-| R3 | **App Store review.** | A thin wrapper around a third-party site is exactly the shape reviewers dislike: guideline 4.2 (minimum functionality) and possibly 5.2 (third-party content). Bundling a Safari extension helps the "does something" argument; a "DMs only" utility framing helps more. | Expect one rejection. Prepare a demo video showing the blocking, and emphasise the Safari extension as the substantive feature. Do not use Instagram's logo or name in the app icon or screenshots. |
-| R4 | **Chrome Web Store policy.** | Single purpose ("reduce Instagram to its DM inbox") is clear. Remote *data* is allowed; remote *code* is not, which is why the config is JSON. `webNavigation` + `tabs` will be scrutinised. | Write the permission justification before submitting (see 11-ship-prep). Consider dropping `tabs`. |
+| R3 | **App Store review.** | No App Store submission or review outcome is recorded in this repository. Store approval remains an open platform decision. | Do not imply review is underway or predict a rejection. Use original Directly artwork and factual product copy in any future submission. |
+| R4 | **Chrome Web Store policy.** | Single purpose ("reduce Instagram to its DM inbox") is clear. Remote *data* is allowed; remote *code* is not, which is why the optional selector config is JSON. The current manifest requests `storage` and `webNavigation` plus Instagram host access. | Keep the store disclosure matched to the generated manifest and the data described in 11-ship-prep. |
 | R5 | **Instagram changes its DOM.** | Certain to happen. | Blocking is URL-based and fails closed. Cosmetic rules are `href`/`aria-label`/`role`-based and fail open. Selector lists are hot-swappable data. |
 | R6 | **Instagram blocks embedded WebViews outright** (user-agent sniffing). | Plausible; many social sites do this to in-app browsers. | Same detection path as R1: one login attempt answers it. Fallback: hide nothing, load in Safari via `SFSafariViewController`? — that has no injection, so it is not a fallback. |
 | R7 | **Trademark.** | "Instagram" in the name or icon would be a problem. | Product name is "Directly"; marketing copy says "for Instagram" descriptively, never "Instagram DMs Only". The site carries a non-affiliation line. All icons are generated here, nothing traced. |
 | R8 | **Telling users this reduces screen time.** | It is a plausible claim, not a measured one. | Do not put "reduce screen time" in the App Store subtitle without data. Say what it does instead. |
-| R9 | **Sign-out on iOS.** | Requires a native cookie module; in Expo Go it cannot work. | `signOut()` tries the module and falls back; document the dev-build requirement. |
-| R10 | **Android.** | Out of scope, but the code must not block it. | Route rules, guard and lock are platform-neutral; the WebView component takes `ApplicationName` and hardware back already. Nothing in core assumes iOS. |
+| R9 | **Sign-out in the native app.** | Sign-out uses Instagram's logout route and clears Directly's locally remembered account metadata; Directly does not read cookies. | Verify the signed-in flow on physical iOS and Android devices. |
+| R10 | **Android native behavior.** | Android is a supported host, but signed-in device acceptance, accessibility behavior and material fidelity remain open. | Use the Android device checks in `09-test-plan.md`; keep Android controls platform-native. |
 
 ## 5. Code review notes (readability)
 

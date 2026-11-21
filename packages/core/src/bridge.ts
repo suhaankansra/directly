@@ -135,7 +135,7 @@ export function parsePageMessage(input: unknown): PageMessage | null {
     case 'di:account': {
       // Only the *name* of the signed-in account, read from a profile link in the
       // page, plus whether a session is present at all. It is displayed in the
-      // Lock tab and never stored or transmitted.
+      // More screen and never stored or transmitted.
       const username = value['username'];
       const signedIn = value['signedIn'];
       if (typeof signedIn !== 'boolean') return null;

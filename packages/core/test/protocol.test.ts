@@ -70,7 +70,7 @@ describe('parsePageMessage', () => {
     expect(parsePageMessage('x'.repeat(5000))).toBeNull();
   });
 
-  it('accepts a username for the Lock tab and rejects anything that is not one', () => {
+  it('accepts a username for More and rejects anything that is not one', () => {
     expect(
       parsePageMessage({ v: 1, type: 'di:account', username: 'alice.b', signedIn: true }),
     ).toEqual({
@@ -91,7 +91,7 @@ describe('parsePageMessage', () => {
       parsePageMessage({ v: 1, type: 'di:account', username: '<img onerror=1>', signedIn: true }),
     ).toBeNull();
     // Session state is required: without it the host would have to guess, which
-    // is how the Lock tab ended up claiming a session that did not exist.
+    // is how More ended up claiming a session that did not exist.
     expect(parsePageMessage({ v: 1, type: 'di:account', username: 'alice.b' })).toBeNull();
   });
 });

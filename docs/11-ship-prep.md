@@ -27,18 +27,20 @@ Instagram" descriptively, and the non-affiliation line must be present.
 **Long (4000 char limit, use this)**
 
 ```
-Directly is Instagram with the scrolling removed.
+Directly is a DM-focused Instagram client with five destinations: Chats, Stories, Activity, Profile
+and More.
 
 It opens straight into your messages and takes away the feed, Reels and Explore. You keep the parts
-you actually use — your conversations, your notifications, profiles you look up on purpose — and lose
+you choose to use — your conversations, activity and supported profile links — and lose
 the parts that swallow an hour.
 
 WHAT YOU KEEP
 • Your DM inbox, threads, notes and message requests
 • Sending text, photos, voice notes, stickers and reactions
 • A badge on the DMs tab and on the app icon when messages are waiting
-• Notifications, including Follow Back
-• Profiles you search for deliberately
+• Activity, including supported Follow Back actions
+• Your profile and supported profile links; there is no global people search
+• Stories when enabled; Stories are off by default
 • One reel or post a friend sends you, opened on its own
 
 WHAT'S GONE
@@ -63,9 +65,9 @@ WHAT IT DOES NOT DO
 • It does not automate anything: no auto-likes, no auto-follows, no automatic messages
 • It does not modify your Instagram account in any way
 
-Your session lives where Instagram put it — in this app's own web view or in your browser — exactly as
-it would anywhere else. The app ships with a Safari extension so that instagram.com behaves the same
-way in Safari.
+Your session lives in Instagram's page in the app web view or your browser. Directly does not read
+your password or cookies. The current native apps use an embedded web view; the desktop browser
+extension is a separate build.
 
 Directly is an independent project. It is not affiliated with, endorsed by or sponsored by Instagram
 or Meta. Instagram is a trademark of Meta Platforms, Inc.
@@ -194,17 +196,17 @@ xcrun safari-web-extension-converter apps/extension/dist/chrome \
 | Permission | Justification |
 |---|---|
 | `host: instagram.com` | The extension only functions on Instagram's website; it reads no other site. |
-| `storage` | Stores six on/off switches locally. No other data. |
+| `storage` | Stores local settings and per-tab story selection context in browser extension storage. |
 | `webNavigation` | Detects a full page load to a blocked route (for example a redirect after login) so it can be sent to the inbox before it renders. |
-| `tabs` | Redirects a blocked tab to the inbox. Consider narrowing to `tabs.update` with no permission before submitting. |
 
 **Remote code declaration:** "The extension does not use remote code. An optional selector list is
 plain JSON data; it cannot execute."
 
-**Data usage:** no user data collected; no data sold; no data used for purposes unrelated to the
-extension's single purpose.
+**Data usage:** no user data is transmitted to a Directly service or third party. Settings and
+per-tab story selection context remain in browser extension storage. No data is sold or used for
+purposes unrelated to the extension's single purpose.
 
-Screenshots to prepare (1280×800): the inbox with our four-tab bar, a thread, a reel opened from a DM
+Screenshots to prepare (1280×800): the inbox with our five-destination bar, a thread, a reel opened from a DM
 with the next-reel chevron hidden, and the settings popup.
 
 ## 7. Firefox Add-ons
@@ -227,7 +229,7 @@ cd apps/web && pnpm build          # → apps/web/dist
   <https://suhaankansra.github.io/directly/privacy.html>. The Pages source must be
   *GitHub Actions* (Settings → Pages, or `gh api -X POST repos/suhaankansra/directly/pages -f build_type=workflow`).
 - **Cloudflare Pages / Netlify / Vercel:** upload `apps/web/dist`, set no build command, no env vars.
-- Still to do after the listings exist: the store links in the four install cards.
+- The website links directly to the current rolling APK and unsigned IPA, and provides source-build instructions for browser extensions. No store listing is currently linked.
 - Contact, on both privacy pages, is the repo's issue tracker rather than an address — there is no
   mailbox behind this project, and a dead `support@` would be worse than a working link.
 
@@ -290,7 +292,7 @@ describing a build it no longer carries.
 - [x] Decide whether `tabs` can be dropped from the extension manifest — dropped; only `tabs.update()`/`onRemoved` are used, which need no permission
 - [x] Minify the in-page bundle for release — `DIRECTLY_MINIFY=1 pnpm build:core` in `release.yml`; dev builds stay readable
 - [ ] Run the observation checklist in `09-test-plan.md` §5 logged in, on a phone and at 1440px
-- [ ] Confirm R1 (WKWebView login) on a real device before spending time on App Store assets
+- [ ] Verify the signed-in Instagram flow on physical iOS and Android devices before preparing store assets
 - [ ] Regenerate icons if the brand changes: `node tools/make-icons.mjs`
 - [x] Add `eas.json` and a real bundle id — `apps/ios/eas.json` is committed; `com.directly.app` on both platforms
 - [x] Privacy-policy URL — <https://suhaankansra.github.io/directly/privacy.html> (GitHub Pages)

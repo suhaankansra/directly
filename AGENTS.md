@@ -50,7 +50,7 @@ they are pushed and pulled, so the two trees drift silently.
 ## Commands
 
 ```bash
-pnpm --filter @directly/core test        # 167 tests, jsdom, no network
+pnpm --filter @directly/core test        # 205 tests, jsdom, no network
 pnpm build:core                          # -> packages/core/dist/inpage.js
 cd apps/ios && pnpm prebuild             # regenerate src/lib/injectedScript.ts
 cd apps/ios && pnpm typecheck
@@ -79,7 +79,7 @@ injecting the previous script and your change appears to do nothing.
 
 - **Verify DMs signed-in** on a real device (inbox, open thread, send, back). Everything
   else has been verified; this needs an authenticated session, which is why it is open.
-- **Confirm the unread count exists at all**: with Debug logging on, the Lock screen says
+- **Confirm the unread count exists at all**: with Debug logging on, More says
   whether the page ever reported one, or that no inbox link was found.
 - The release IPA is unsigned; sideloading requires re-signing with the user's own team
   (`docs/11-ship-prep.md` §4 has the three routes).

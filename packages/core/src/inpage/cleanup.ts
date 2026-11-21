@@ -119,7 +119,7 @@ export function runCleanup(deps: CleanupDeps): void {
   const root = doc.documentElement;
   root.setAttribute('data-di-cleaned', '1');
 
-  // 1. Hide Instagram's own navigation: our four tabs (native bar on iOS, our
+  // 1. Hide Instagram's own navigation: our five destinations (native bar on iOS, our
   //    injected bar in the extension) are the only navigation now.
   const navSelectors = resolver.currentLayout === 'desktop' ? ['sidebar'] : ['bottomNav'];
   const navContext: RouteContext = { settings, loggedIn: deps.isLoggedIn(), pinId: null, storyUser: deps.getStoryUser?.() };

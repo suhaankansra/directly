@@ -20,7 +20,7 @@ import { IgWebView, type IgWebViewHandle } from './src/components/IgWebView';
 import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
 import { StoriesScreen } from './src/screens/StoriesScreen';
-import { LockScreen } from './src/screens/LockScreen';
+import { MoreScreen } from './src/screens/MoreScreen';
 import { logEvent } from './src/lib/diagnostics';
 import {
   alertPermission,
@@ -41,7 +41,7 @@ import {
 import { useColors, type Palette, radius, spacing } from './src/theme';
 
 // Read from app.json rather than typed here: the copy in this file said 0.1.0 for
-// two releases, and the Lock screen's diagnostics report is the one place a stale
+// two releases, and More's diagnostics report is the one place a stale
 // version is actually harmful.
 const VERSION: string = appConfig.expo.version;
 const INBOX_ROUTE = normalizePath(INBOX_PATH);
@@ -67,7 +67,7 @@ function Shell() {
   const [path, setPath] = useState<string>(INBOX_PATH);
   const [username, setUsername] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
-  const [lockOpen, setLockOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [storiesOpen, setStoriesOpen] = useState(false);
   const [stories, setStories] = useState<StoryRing[]>([]);
   const [storyUsers, setStoryUsers] = useState<string[]>([]);
@@ -83,7 +83,7 @@ function Shell() {
   const [target, setTarget] = useState<{ path: string; nonce: number } | null>(null);
   const [, setLayout] = useState<Layout>('mobile');
   const [unread, setUnread] = useState(0);
-  // When the count last arrived, so the Lock screen can say whether the page has
+  // When the count last arrived, so More can say whether the page has
   // ever exposed it — the difference between "no messages" and "no badge found".
   const [unreadAt, setUnreadAt] = useState<number | null>(null);
   // Alerts are only ever local (see lib/notifications.ts), so the switch here is
@@ -103,7 +103,7 @@ function Shell() {
    */
   const pendingTab = useRef<{ tab: TabId; at: number } | null>(null);
   const pathRef = useRef<string>(INBOX_PATH);
-  const lockRef = useRef(false);
+  const moreRef = useRef(false);
   const askedForAlerts = useRef(false);
   const alertsRef = useRef(true);
   /** The first count of a session is the state of the world, not news. */
@@ -137,8 +137,8 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    lockRef.current = lockOpen;
-  }, [lockOpen]);
+    moreRef.current = moreOpen;
+  }, [moreOpen]);
 
   useEffect(() => {
     // Ask for alerts only once there is a session to alert about, and only once:
@@ -213,9 +213,9 @@ function Shell() {
     // The tab bar follows the URL the page reports, not the last thing tapped,
     // so a swipe back or an in-page link still moves the highlight.
     if (!storyUserForPath(nextPath)) setStoryUser(null);
-    if (!lockOpen && !storiesOpen && nextTab) setTab(nextTab);
-    else if (lockOpen) setTab('more');
-  }, [lockOpen, storiesOpen]);
+    if (!moreOpen && !storiesOpen && nextTab) setTab(nextTab);
+    else if (moreOpen) setTab('more');
+  }, [moreOpen, storiesOpen]);
 
   const onAccount = useCallback((name: string | null, isSignedIn: boolean) => {
     // The page can only name the account when your avatar link is rendered. On a
@@ -251,7 +251,7 @@ function Shell() {
     // an unchanged number on every route change would be nagging.
     if (count <= previous) return;
     // On the inbox list the new thread is already in front of you.
-    if (!lockRef.current && pathRef.current === INBOX_ROUTE) return;
+    if (!moreRef.current && pathRef.current === INBOX_ROUTE) return;
     void notifyUnread(count);
   }, []);
 
@@ -268,7 +268,7 @@ function Shell() {
     if (!settings.allowStories || !storyUserForPath(`/stories/${user}/`)) return;
     setStoryUsers(stories.map((ring) => ring.username));
     setStoryUser(user.toLowerCase());
-    setStoriesOpen(false); setLockOpen(false); setTab('stories');
+    setStoriesOpen(false); setMoreOpen(false); setTab('stories');
     setTarget({ path: `/stories/${user}/`, nonce: Date.now() });
   }, [settings.allowStories, stories]);
 
@@ -276,15 +276,15 @@ function Shell() {
     (next: TabId) => {
       logEvent('tap', next);
       if (next === 'stories') {
-        setStoriesOpen(true); setLockOpen(false); setTab('stories'); return;
+        setStoriesOpen(true); setMoreOpen(false); setTab('stories'); return;
       }
       setStoriesOpen(false);
       if (next === 'more') {
-        setLockOpen(true);
+        setMoreOpen(true);
         setTab('more');
         return;
       }
-      setLockOpen(false);
+      setMoreOpen(false);
       setTab(next);
       pendingTab.current = { tab: next, at: Date.now() };
       // Without a handle there is no path to build, and loading the inbox in its
@@ -301,11 +301,11 @@ function Shell() {
   );
 
   const switchAccount = useCallback(() => {
-    // The Lock screen sits on top of the web view (and the page is at opacity 0
+    // More sits on top of the web view (and the page is at opacity 0
     // behind it), so opening Instagram's menu from there would show it to nobody.
     // Close the overlay, move the tab highlight back to the page we reveal, then
     // click the page's own chevron.
-    setLockOpen(false);
+    setMoreOpen(false);
     setTab(tabForPath(path) ?? 'inbox');
     setTimeout(() => web.current?.openAccountMenu(), 80);
   }, [path]);
@@ -316,7 +316,7 @@ function Shell() {
     // The native cookie module this used to call was removed — its Android build
     // script still invoked jcenter(), which Gradle 9 dropped, so it cannot be
     // built at all, and a dependency that will not compile is not worth having.
-    setLockOpen(false);
+    setMoreOpen(false);
     setTab('inbox');
     setStories([]); setStoryUser(null); setStoryUsers([]); setUsername(null); void saveUsername(null);
     setUnread(0);
@@ -334,8 +334,8 @@ function Shell() {
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      if (lockOpen || storiesOpen) {
-        setLockOpen(false); setStoriesOpen(false); setTab(tabForPath(path) ?? 'inbox');
+      if (moreOpen || storiesOpen) {
+        setMoreOpen(false); setStoriesOpen(false); setTab(tabForPath(path) ?? 'inbox');
         return true;
       }
       if (path === INBOX_ROUTE) return false;
@@ -343,7 +343,7 @@ function Shell() {
       return true;
     });
     return () => subscription.remove();
-  }, [lockOpen, storiesOpen, path]);
+  }, [moreOpen, storiesOpen, path]);
 
   if (!settingsReady) {
     // Same surface as a page load: the app should never show a second, different
@@ -360,8 +360,8 @@ function Shell() {
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <StatusBar style={colors.bg === '#f5f5fa' ? 'dark' : 'light'} />
       <View style={[styles.body, rail && { marginLeft: 88 }]}>
-        <View pointerEvents={lockOpen || storiesOpen ? 'none' : 'auto'} accessibilityElementsHidden={lockOpen || storiesOpen} importantForAccessibility={lockOpen || storiesOpen ? 'no-hide-descendants' : 'auto'}
-          style={[styles.webLayer, (lockOpen || storiesOpen) && styles.hidden, ((path.startsWith('/direct/') && path !== '/direct/inbox') || storyUserForPath(path)) && !keyboardOpen && !rail && { marginBottom: navHeight }]}>
+        <View pointerEvents={moreOpen || storiesOpen ? 'none' : 'auto'} accessibilityElementsHidden={moreOpen || storiesOpen} importantForAccessibility={moreOpen || storiesOpen ? 'no-hide-descendants' : 'auto'}
+          style={[styles.webLayer, (moreOpen || storiesOpen) && styles.hidden, ((path.startsWith('/direct/') && path !== '/direct/inbox') || storyUserForPath(path)) && !keyboardOpen && !rail && { marginBottom: navHeight }]}>
           <IgWebView
             ref={web}
             settings={settings}
@@ -380,11 +380,11 @@ function Shell() {
           />
         </View>
 
-        {storiesOpen && <View style={styles.lockLayer}><StoriesScreen stories={stories} enabled={settings.allowStories} autoAdvance={settings.storiesAutoAdvance}
-          onOpen={openStory} onSettings={() => { setStoriesOpen(false); setLockOpen(true); setTab('more'); }} /></View>}
-        {lockOpen ? (
-          <View style={styles.lockLayer}>
-            <LockScreen
+        {storiesOpen && <View style={styles.moreLayer}><StoriesScreen stories={stories} enabled={settings.allowStories} autoAdvance={settings.storiesAutoAdvance}
+          onOpen={openStory} onSettings={() => { setStoriesOpen(false); setMoreOpen(true); setTab('more'); }} /></View>}
+        {moreOpen ? (
+          <View style={styles.moreLayer}>
+            <MoreScreen
               settings={settings}
               username={username}
               signedIn={signedIn}
@@ -397,7 +397,7 @@ function Shell() {
               onSwitchAccount={switchAccount}
               onChange={updateSettings}
               onOpenProfile={() => {
-                setLockOpen(false);
+                setMoreOpen(false);
                 setTab('profile');
                 if (username) setTarget({ path: `/${username}/`, nonce: Date.now() });
                 else web.current?.openProfile();
@@ -433,7 +433,7 @@ const makeStyles = (colors: Palette) => StyleSheet.create({
   body: { flex: 1 },
   webLayer: { flex: 1 },
   hidden: { opacity: 0 },
-  lockLayer: {
+  moreLayer: {
     position: 'absolute',
     top: 0,
     left: 0,

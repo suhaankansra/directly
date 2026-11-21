@@ -1,6 +1,6 @@
 # 09 — Test plan and acceptance
 
-Legend: **PASS (auto)** = covered by `pnpm test` (167 tests). **PASS (browser)** = verified in
+Legend: **PASS (auto)** = covered by `pnpm test` (205 tests). **PASS (browser)** = verified in
 Chromium against the local fixture (`packages/core/test/fixtures/serve.mjs`). **DEVICE** = needs your
 phone or laptop, because it needs a real Instagram session. **N/A** = surface does not exist yet.
 
@@ -9,7 +9,7 @@ phone or laptop, because it needs a real Instagram session. **N/A** = surface do
 ```bash
 pnpm install
 pnpm build            # core → extension → web
-pnpm test             # 167 core tests
+pnpm test             # 205 core tests
 pnpm typecheck        # core, extension, web
 cd apps/ios && npm install && npx expo run:ios     # the iOS app
 node packages/core/test/fixtures/serve.mjs         # fixture :4319
@@ -18,18 +18,18 @@ cd apps/web && pnpm build && pnpm serve            # site :4320
 
 ## 1. Allowed — must work
 
-| # | Check | iOS | Safari+iOS ext | Chrome | Firefox | macOS Safari | Status |
-|---|---|---|---|---|---|---|---|
-| A1 | Launch → inbox directly (logged in) | — | — | — | — | — | DEVICE |
-| A2 | Fresh install → login → 2FA/challenge → inbox | — | — | — | — | — | DEVICE |
-| A3 | Open thread, send text / photo / voice / sticker / react | — | — | — | — | — | DEVICE |
-| A4 | Compose icon → new chat → search contacts | — | — | — | — | — | DEVICE |
-| A5 | Notes row visible and usable | — | — | — | — | — | DEVICE |
-| A6 | Notifications tab loads; Follow Back works | — | — | — | — | — | DEVICE |
-| A7 | Own profile and another user's profile load | — | — | — | — | — | DEVICE |
-| A8 | Reel sent in DM: opens, plays, like/reply, back returns to thread | — | — | — | — | — | PASS (browser, fixture) for route + lock; media + reply DEVICE |
-| A9 | Account switcher (▾) works or is cleanly hidden | — | — | — | — | — | DEVICE |
-| A10 | Session survives app kill / phone restart | — | — | — | — | — | DEVICE |
+| # | Check | iOS | Android | Safari+iOS ext | Chrome | Firefox | macOS Safari | Status |
+|---|---|---|---|---|---|---|---|---|
+| A1 | Launch → inbox directly (logged in) | — | — | — | — | — | — | DEVICE |
+| A2 | Fresh install → login → 2FA/challenge → inbox | — | — | — | — | — | — | DEVICE |
+| A3 | Open thread, send text / photo / voice / sticker / react | — | — | — | — | — | — | DEVICE |
+| A4 | Compose icon → new chat → search contacts | — | — | — | — | — | — | DEVICE |
+| A5 | Notes row visible and usable | — | — | — | — | — | — | DEVICE |
+| A6 | Activity tab loads; supported Follow Back action works | — | — | — | — | — | — | DEVICE |
+| A7 | Own profile and another user's profile load | — | — | — | — | — | — | DEVICE |
+| A8 | Reel sent in DM: opens, plays, like/reply, back returns to thread | — | — | — | — | — | — | PASS (browser, fixture) for route + lock; media + reply DEVICE |
+| A9 | Account switcher (▾) works or is cleanly hidden | — | — | — | — | — | — | DEVICE |
+| A10 | Session survives app kill / phone restart | — | — | — | — | — | — | DEVICE |
 
 ## 2. Blocked — must fail gracefully
 
@@ -94,16 +94,17 @@ point: a bare “works” cannot change a selector, but a path or a pasted repor
 | 6 | Open mobile web in Safari, outside the app. | Whether the “Use the app” banner has a close button or only an ✕ that returns, and whether that banner ever appeared inside Directly (it must not). |
 | 7 | Tap the activity (heart) tab. | The path you land on — `/accounts/activity/` or something else. |
 | 8 | Sit on the Profile tab and have someone DM you. | Whether the DM tab badge appeared and what number it showed, how many alerts arrived (one / several / none), and whether the number dropped after you opened and read the thread. |
-| 9 | Turn Debug logging on, then open Lock. | The exact “Unread: …” line. “Nothing yet” means neither the DM link, its parent row, nor either one's `aria-label` carried a count, so `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge. |
+| 9 | Turn Debug logging on, then open More. | The exact “Unread: …” line. “Nothing yet” means neither the DM link, its parent row, nor either one's `aria-label` carried a count, so `unread.ts` needs the real markup; `0` with a timestamp means the link was found and had no badge. |
 | 10 | On that same card, tap **Copy diagnostics** and paste it into a note. | The pasted report verbatim — five facts (version, platform and OS version, signed-in handle, path, unread) and then a decisions log, oldest first, one `HH:MM:SS kind detail` line per event. Nothing about a message should appear. An empty paste means the clipboard module did not link. |
-| 10a | With Debug logging on, tap Activity, then open Lock and read the top of the log. | The three or four lines that belong to that tap: `tap activity`, then either `route /accounts/activity` (the tab works) or `tab-failed activity` after a route back to `/direct/inbox` (Instagram refuses it). Whichever it is answers the Activity question without a second build. |
-| 10b | Leave the phone on a thread for a few minutes, then open Lock. | Whether `frame` lines appear with a Meta host while nothing else happens — that is the pixel being correctly ignored. Safari opening on its own with no `block`/`meta` line at that moment means the URL never reached the host at all, which is the finding to send back. |
+| 10a | With Debug logging on, tap Activity, then open More and read the top of the log. | The three or four lines that belong to that tap: `tap activity`, then either `route /accounts/activity` (the tab works) or `tab-failed activity` after a route back to `/direct/inbox` (Instagram refuses it). Whichever it is answers the Activity question without a second build. |
+| 10b | Leave the phone on a thread for a few minutes, then open More. | Whether `frame` lines appear with a Meta host while nothing else happens — that is the pixel being correctly ignored. Safari opening on its own with no `block`/`meta` line at that moment means the URL never reached the host at all, which is the finding to send back. |
 | 11 | Compare Directly's DM badge with the count Instagram itself draws next to its Messages icon, same account, in Safari. | Both numbers, or “Instagram shows none”. A number there and nothing in Directly means the count lives somewhere other than the link, its subtree or its parent row — that markup is the finding to send back. |
 | 12 | Open your own profile, then its Reels tab. | Grid or single reel, and the path afterwards. |
 | 13 | From a profile, press back twice. | Where each press lands. The feed is a bug, not a preference. |
-| 14 | Open Stories from the inbox tray (top row). | Whether they open, and whether you can get out without the archive. |
+| 14 | Enable Stories in More → Focus controls, then open a person from the Stories tray. | Whether they open, whether story navigation stays within the selected person when continuation is off, and whether you can get out without the archive. |
+| 15 | Open More → Focus controls on iOS and Android. | Verify Stories and story continuation both default off, enabling Stories permits choosing one listed person, and the controls match native platform presentation. Record device, OS, text scaling, and any layout or accessibility issue. |
 
-Send the answers as text, with a screenshot of anything surprising; a Debug report on the Lock screen
+Send the answers as text, with a screenshot of anything surprising; a Debug report on the More screen
 covers items 9–11 in one paste. Item 11 is the one that decides whether the unread badge is a real
 feature or a guess.
 
