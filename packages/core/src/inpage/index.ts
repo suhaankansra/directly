@@ -119,6 +119,9 @@ export function boot(options: BootOptions = {}): Booted {
     (settings.storiesAutoAdvance && storyUsers.some((user) => user.toLowerCase() === currentUser))) ? initialUser : null;
   let stories: StoryRing[] = [];
   let lastStories = '';
+  let storySelectionVersion = 0;
+  let storySelectionPath = win.location.href;
+  let openingStory = false;
 
   const resolver = new SelectorResolver(detectLayout(win));
   const toast: Toast = createToast(win);
@@ -222,6 +225,7 @@ export function boot(options: BootOptions = {}): Booted {
   }
 
   function navigate(path: string): void {
+    storySelectionVersion += 1;
     if (options.navigate) {
       options.navigate(path);
       return;
@@ -236,13 +240,22 @@ export function boot(options: BootOptions = {}): Booted {
       post({ v: 1, type: 'di:story', user });
       return;
     }
+    // Persisting the per-tab context can outlive a settings change or exit.
+    // Serialize selections and commit only if this request still has intent.
+    if (openingStory) return;
+    openingStory = true;
+    const version = storySelectionVersion;
+    const users = stories.map((ring) => ring.username);
     try {
-      storyUsers = stories.map((ring) => ring.username);
-      await options.selectStory?.(user, storyUsers);
+      await options.selectStory?.(user, users);
+      if (version !== storySelectionVersion || !settings.allowStories) return;
+      storyUsers = users;
       storyUser = user.toLowerCase();
       navigate(`/stories/${user}/`);
     } catch {
-      toast.show('Couldn’t open this story. Please try again.');
+      if (version === storySelectionVersion) toast.show('Couldn’t open this story. Please try again.');
+    } finally {
+      openingStory = false;
     }
   }
 
@@ -394,6 +407,10 @@ export function boot(options: BootOptions = {}): Booted {
   });
 
   function handleRouteChange(): void {
+    if (storySelectionPath !== win.location.href) {
+      storySelectionVersion += 1;
+      storySelectionPath = win.location.href;
+    }
     try {
       const path = normalizePath(win.location.href);
       if (!storyUserForPath(path)) { storyUser = null; storyUsers = []; }
@@ -437,7 +454,11 @@ export function boot(options: BootOptions = {}): Booted {
         restoreRemovals(doc);
         observer.flush();
         cleanupNow();
-        if (!settings.allowStories) storyUser = null;
+        if (!settings.allowStories) {
+          storySelectionVersion += 1;
+          storyUser = null;
+          storyUsers = [];
+        }
         guard.check();
         nav?.refreshStories();
         break;
@@ -490,7 +511,11 @@ export function boot(options: BootOptions = {}): Booted {
       restoreRemovals(doc);
       observer.flush();
       cleanupNow();
-      if (!settings.allowStories) storyUser = null;
+      if (!settings.allowStories) {
+        storySelectionVersion += 1;
+        storyUser = null;
+        storyUsers = [];
+      }
       guard.check();
       nav?.refreshStories();
     },
@@ -511,6 +536,7 @@ export function boot(options: BootOptions = {}): Booted {
       url: win.location.href,
     }),
     destroy: () => {
+      storySelectionVersion += 1;
       try {
         observer.dispose();
         guard.dispose();

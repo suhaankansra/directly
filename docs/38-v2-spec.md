@@ -113,3 +113,34 @@ Expo's [GlassEffect documentation](https://docs.expo.dev/versions/v58.0.0/sdk/gl
 documents the iOS 26 component, availability checks and the separate Reduce
 Transparency check. Package version was matched to this app's Expo SDK 58.
 The native module's actual rendering still needs a device test.
+
+## Stories and Focus follow-up — 21 November 2026
+
+Story settings now opens the shared Focus controls sheet directly above Stories.
+Done, platform dismissal and Android Back use the existing sheet close action;
+the originating Stories or More screen and the single WebView stay mounted.
+Changes still apply immediately through the existing settings/persistence path.
+
+Extension story selection now waits for per-tab persistence before committing
+the selected handle and captured continuation list. Disabling Stories cancels
+pending intent, including when Stories is re-enabled before persistence returns.
+Navigation away and bootstrap disposal also cancel it. Repeated taps do not
+start concurrent persistence requests, and a failed save permits a retry.
+
+Validation: 211 core tests pass, including six new delayed-selection regression
+cases. Workspace and native type checks pass after rebuilding core; native
+injection was regenerated and checked against the exact built script. Chrome
+and Firefox builds and the offline extension integration check pass.
+Both iOS and Android production JavaScript/Hermes bundles export successfully;
+these are local bundle checks, not installed native binaries.
+
+The pnpm native prebuild wrapper attempted dependency relinking and failed on
+network access. It was stopped; the equivalent injection script ran directly,
+and native dependencies were restored offline from the existing cache without
+changing manifests or lockfiles.
+
+No native screenshots or authenticated-device tests were performed for this
+follow-up: simulator tooling is unavailable in this environment. Sheet dismissal,
+return to Stories, persisted switches after relaunch and the existing same-URL
+story boundary remain device acceptance checks. No commit or publication was
+performed.

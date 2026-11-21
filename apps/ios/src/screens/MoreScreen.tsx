@@ -4,7 +4,6 @@ import * as Clipboard from 'expo-clipboard';
 import type { Settings } from '@directly/core';
 
 import { clearDiagnostics, clock, reportLines, useDiagnostics } from '../lib/diagnostics';
-import { FocusControls } from './FocusControls';
 import { useColors, type Palette, radius, spacing } from '../theme';
 
 type Props = {
@@ -23,6 +22,7 @@ type Props = {
   alertsBlocked: boolean;
   onAlertsChange: (next: boolean) => void;
   onChange: (next: Settings) => void;
+  onOpenFocus: () => void;
   onOpenProfile: () => void;
   /** Opens Instagram's own account menu — the only switcher that exists here. */
   onSwitchAccount: () => void;
@@ -41,6 +41,7 @@ export function MoreScreen({
   alertsBlocked,
   onAlertsChange,
   onChange,
+  onOpenFocus,
   onOpenProfile,
   onSwitchAccount,
   onSignOut,
@@ -48,7 +49,6 @@ export function MoreScreen({
 }: Props) {
   const colors = useColors();
   const styles = makeStyles(colors);
-  const [focusOpen, setFocusOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   // Recorded whether or not the switch is on, so turning it on after something
   // went wrong still shows what led there; the switch decides what is shown.
@@ -116,11 +116,10 @@ export function MoreScreen({
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Focus</Text>
         <Text style={styles.note}>Feed, Explore, and endless Reels are always blocked.</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Focus controls" onPress={() => setFocusOpen(true)} style={styles.button}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Focus controls" onPress={onOpenFocus} style={styles.button}>
           <Text style={styles.buttonText}>Focus controls</Text>
         </Pressable>
       </View>
-      <FocusControls visible={focusOpen} settings={settings} onChange={onChange} onClose={() => setFocusOpen(false)} />
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Alerts</Text>
         <View style={styles.row}>

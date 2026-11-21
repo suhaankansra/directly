@@ -76,6 +76,76 @@ describe('story ring data and protocol', () => {
 });
 
 describe('real bootstrap lifecycle', () => {
+  function delayedSelection() {
+    let resolve!: () => void;
+    let reject!: (error: Error) => void;
+    const pending = new Promise<void>((yes, no) => { resolve = yes; reject = no; });
+    document.body.insertAdjacentHTML('beforeend', '<a id="story" href="/stories/alice/">A</a>');
+    const navigate = vi.fn();
+    const selectStory = vi.fn(() => pending);
+    api = boot({ win: window, host: 'extension', settings, showNav: false, post: vi.fn(), navigate, selectStory });
+    document.querySelector<HTMLAnchorElement>('#story')!.click();
+    return { resolve, reject, navigate, selectStory };
+  }
+
+  it('waits for persisted selection and keeps the captured continuation list', async () => {
+    const request = delayedSelection();
+    expect(request.navigate).not.toHaveBeenCalled();
+    expect(request.selectStory).toHaveBeenCalledWith('alice', ['alice']);
+    document.body.insertAdjacentHTML('beforeend', '<a href="/stories/bob/">B</a>');
+    api!.refresh();
+    request.resolve();
+    await Promise.resolve();
+    expect(request.navigate).toHaveBeenCalledWith('/stories/alice/');
+    window.history.pushState({}, '', '/stories/alice/');
+    api!.applySettings({ storiesAutoAdvance: true });
+    request.navigate.mockClear();
+    window.history.pushState({}, '', '/stories/bob/');
+    expect(request.navigate).toHaveBeenCalledWith('/direct/inbox/');
+  });
+
+  it.each(['api', 'bridge'])('cancels a pending story when disabled via %s, even after re-enabling', async (source) => {
+    const request = delayedSelection();
+    if (source === 'api') api!.applySettings({ allowStories: false });
+    else apply({ v: 1, type: 'di:settings', settings: { ...settings, allowStories: false } });
+    api!.applySettings({ allowStories: true });
+    request.resolve();
+    await Promise.resolve();
+    expect(request.navigate).not.toHaveBeenCalled();
+    window.history.pushState({}, '', '/stories/alice/');
+    expect(request.navigate).toHaveBeenCalledWith('/direct/inbox/');
+  });
+
+  it('does not pull the user back into a story after navigating to a thread', async () => {
+    const request = delayedSelection();
+    window.history.pushState({}, '', '/direct/t/2/');
+    request.resolve();
+    await Promise.resolve();
+    expect(request.navigate).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/direct/t/2/');
+  });
+
+  it('does not navigate after bootstrap is destroyed', async () => {
+    const request = delayedSelection();
+    api!.destroy(); api = null;
+    request.resolve();
+    await Promise.resolve();
+    expect(request.navigate).not.toHaveBeenCalled();
+  });
+
+  it('serializes repeated taps and allows retry after a persistence error', async () => {
+    const request = delayedSelection();
+    document.querySelector<HTMLAnchorElement>('#story')!.click();
+    expect(request.selectStory).toHaveBeenCalledTimes(1);
+    request.reject(new Error('Storage unavailable'));
+    await Promise.resolve();
+    expect(request.navigate).not.toHaveBeenCalled();
+    request.selectStory.mockImplementation(() => Promise.resolve());
+    document.querySelector<HTMLAnchorElement>('#story')!.click();
+    await Promise.resolve();
+    expect(request.navigate).toHaveBeenCalledWith('/stories/alice/');
+  });
+
   it('publishes rings while preserving the message surface and story tap targets', () => {
     document.body.insertAdjacentHTML('beforeend', '<a id="story" href="/stories/alice/">A</a>');
     const post = vi.fn();

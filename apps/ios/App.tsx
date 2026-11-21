@@ -21,6 +21,7 @@ import { LoadingSurface } from './src/components/LoadingSurface';
 import { TabBar } from './src/components/TabBar';
 import { StoriesScreen } from './src/screens/StoriesScreen';
 import { MoreScreen } from './src/screens/MoreScreen';
+import { FocusControls } from './src/screens/FocusControls';
 import { logEvent } from './src/lib/diagnostics';
 import {
   alertPermission,
@@ -69,6 +70,7 @@ function Shell() {
   const [signedIn, setSignedIn] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [storiesOpen, setStoriesOpen] = useState(false);
+  const [focusOpen, setFocusOpen] = useState(false);
   const [stories, setStories] = useState<StoryRing[]>([]);
   const [storyUsers, setStoryUsers] = useState<string[]>([]);
   const [storyUser, setStoryUser] = useState<string | null>(null);
@@ -381,7 +383,7 @@ function Shell() {
         </View>
 
         {storiesOpen && <View style={styles.moreLayer}><StoriesScreen stories={stories} enabled={settings.allowStories} autoAdvance={settings.storiesAutoAdvance}
-          onOpen={openStory} onSettings={() => { setStoriesOpen(false); setMoreOpen(true); setTab('more'); }} /></View>}
+          onOpen={openStory} onSettings={() => setFocusOpen(true)} /></View>}
         {moreOpen ? (
           <View style={styles.moreLayer}>
             <MoreScreen
@@ -396,6 +398,7 @@ function Shell() {
               onAlertsChange={updateAlerts}
               onSwitchAccount={switchAccount}
               onChange={updateSettings}
+              onOpenFocus={() => setFocusOpen(true)}
               onOpenProfile={() => {
                 setMoreOpen(false);
                 setTab('profile');
@@ -416,6 +419,7 @@ function Shell() {
       </View>
 
       {!keyboardOpen && <TabBar active={tab} onSelect={selectTab} bottomInset={insets.bottom} onHeight={setNavHeight} unread={unread} />}
+      <FocusControls visible={focusOpen} settings={settings} onChange={updateSettings} onClose={() => setFocusOpen(false)} />
     </View>
   );
 }
